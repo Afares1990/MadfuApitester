@@ -1,121 +1,309 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Api documentation Guide</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Madfu API Tester</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; background:#f6f6f6; padding:20px; }
-    .email { max-width:800px; margin:0 auto; background:#ffffff; border:1px solid #e0e0e0; padding:24px; }
-    .header { border-bottom:1px solid #e9e9e9; padding-bottom:12px; margin-bottom:18px; }
-    .label { font-size:18px; font-weight:700; color:#333; }
-    .subtitle { color:#666; margin-top:4px; }
-    .section { margin:18px 0; }
-    .btn { display:inline-block; background:#007bff; color:#fff; padding:8px 12px; border-radius:4px; text-decoration:none; }
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    body{margin:0;padding:20px;background:#f4f7fb;color:#0b0b0b}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .badge{background:#0b66c2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:600}
 
-    /* Credential table styled for DOCX generation - all blue shading */
-    table.cred-table { width:100%; border-collapse:collapse; margin-top:8px; }
-    table.cred-table th, table.cred-table td { border:1px solid #004085; padding:8px; text-align:left; }
-    table.cred-table th { background:#007bff; color:#ffffff; font-weight:700; }
-    table.cred-table td { background:#cfe2ff; color:#00203f; }
+    .panel{background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 8px rgba(20,20,40,0.06);margin-bottom:18px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input[type=text],textarea,select{width:100%;padding:10px;border:1px solid #d7dee9;border-radius:6px;font-size:14px}
+    textarea{min-height:120px;resize:vertical}
+    .col{flex:1;min-width:220px}
+    .actions{display:flex;gap:10px;align-items:center;margin-top:8px}
+    button{background:#0b66c2;color:#fff;padding:10px 14px;border:none;border-radius:6px;cursor:pointer}
+    button.secondary{background:#eef3fb;color:#0b66c2;border:1px solid #cfe0fb}
+    .response{white-space:pre-wrap;background:#071326;color:#bfe1ff;padding:12px;border-radius:6px;min-height:120px;overflow:auto}
 
     /* Credit card block */
-    .card-block { background:#f0f8ff; border:1px dashed #90cdf4; padding:12px; border-radius:6px; }
-    .mono { font-family: "Courier New", Courier, monospace; background:rgba(0,0,0,0.02); padding:2px 6px; border-radius:4px; }
+    .card-block{border:1px dashed #cfe0fb;padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff 0%,#f7fbff 100%)}
+    .card-row{display:flex;gap:8px}
+    .small{font-size:13px}
 
-    footer { font-size:12px; color:#888; margin-top:18px; }
+    /* Doc generation preview table */
+    .preview-table{width:100%;border-collapse:collapse;margin-top:12px}
+    .preview-table th,.preview-table td{padding:8px;border:1px solid #dbeaf8}
+    .preview-table thead{background:#e6f0ff}
+
+    footer{margin-top:12px;font-size:12px;color:#6b7280}
   </style>
 </head>
 <body>
-  <div class="email">
-    <div class="header">
-      <div class="label">Api documentation Guide</div>
-      <div class="subtitle">Generated documentation and testing instructions</div>
-    </div>
+  <div class="container">
+    <header>
+      <h1>Madfu API Tester</h1>
+      <div class="badge">Tester UI Restored</div>
+    </header>
 
-    <div class="section">
-      <strong>Hi team,</strong>
-      <p>This message contains the updated API documentation guide and testing instructions. The generated DOCX credentials table now uses blue shading for better visibility when exported to DOCX. Below you'll find the credential table, instructions for using the DOCX, and test credit card details for placing orders in the test environment.</p>
-    </div>
+    <section class="panel">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <label for="endpoint">Endpoint (URL)</label>
+          <input id="endpoint" type="text" placeholder="https://api.example.com/path" />
+        </div>
 
-    <div class="section">
-      <strong>Credential Table (for generated DOCX)</strong>
-      <p>When the documentation is exported to DOCX, the following credential table will appear with uniform blue shading.</p>
+        <div style="width:140px">
+          <label for="method">Method</label>
+          <select id="method">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>OPTIONS</option>
+          </select>
+        </div>
 
-      <table class="cred-table" aria-label="Credentials table for generated docx">
-        <thead>
-          <tr>
-            <th>Environment</th>
-            <th>Client ID</th>
-            <th>Client Secret</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Sandbox</td>
-            <td class="mono">sandbox-client-id-123</td>
-            <td class="mono">sandbox-secret-abc</td>
-            <td>Use for development and verification</td>
-          </tr>
-          <tr>
-            <td>Staging</td>
-            <td class="mono">staging-client-id-456</td>
-            <td class="mono">staging-secret-def</td>
-            <td>Matches staging API base URL</td>
-          </tr>
-          <tr>
-            <td>Production</td>
-            <td class="mono">prod-client-id-789</td>
-            <td class="mono">prod-secret-ghi</td>
-            <td>Restricted - do not share publicly</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <p style="margin-top:8px;">Note: All table cells are intentionally shaded blue to match the DOCX export styling. If you need alternate colors for accessibility, contact the documentation owner.</p>
-    </div>
-
-    <div class="section">
-      <strong>For Testing Orders — Credit Card Block</strong>
-      <p>Use these test card numbers only in the test/sandbox environment. Do not use real cards here.</p>
-
-      <div class="card-block">
-        <p><strong>Visa (success)</strong>: <span class="mono">4242 4242 4242 4242</span></p>
-        <p><strong>Mastercard (success)</strong>: <span class="mono">5555 5555 5555 4444</span></p>
-        <p><strong>American Express (success)</strong>: <span class="mono">3782 822463 10005</span></p>
-        <p><strong>Expired / decline scenarios</strong>: see gateway docs for specific test numbers.</p>
-        <p>Use these details for test checkout flows:</p>
-        <ul>
-          <li>Expiry: <span class="mono">12/34</span> (any valid future date)</li>
-          <li>CVV: <span class="mono">123</span> (AMEX typically 1234)</li>
-          <li>Billing address: <span class="mono">123 Test St, Testville, 12345</span></li>
-        </ul>
+        <div style="width:180px">
+          <label for="contentType">Content-Type</label>
+          <select id="contentType">
+            <option>application/json</option>
+            <option>application/x-www-form-urlencoded</option>
+            <option>multipart/form-data</option>
+            <option>text/plain</option>
+          </select>
+        </div>
       </div>
 
-      <p style="margin-top:8px;">If you need additional test card scenarios (3DS, processor-specific declines, etc.), refer to the payment gateway's sandbox test data and map those cases to your automated tests.</p>
-    </div>
+      <div style="margin-top:12px">
+        <label for="headers">Headers (one per line, Key: Value)</label>
+        <textarea id="headers" placeholder="Authorization: Bearer &lt;token&gt;\nX-Custom: value"></textarea>
+      </div>
 
-    <div class="section">
-      <strong>How to use this document (email formatted)</strong>
-      <ol>
-        <li>Open this page or download the generated DOCX to share with stakeholders.</li>
-        <li>When exporting to DOCX, the credential table will retain the blue shading shown above.</li>
-        <li>For placing test orders, use the credit card block values in the sandbox environment only.</li>
-        <li>Reply to this email-style guide with any questions or requests for additional test data or formatting changes.</li>
-      </ol>
+      <div style="margin-top:12px">
+        <label for="body">Body</label>
+        <textarea id="body" placeholder='{"name":"value"}'></textarea>
+      </div>
 
-      <p>If you want the DOCX exported with different shades of blue or additional rows, tell me which values to change and I'll update the template.</p>
+      <div class="actions">
+        <button id="send">Send Request</button>
+        <button id="pretty" class="secondary">Pretty JSON</button>
+        <button id="copy" class="secondary">Copy Response</button>
 
-      <p style="margin-top:12px;">Best regards,<br/>Documentation Team</p>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button id="generateDoc" class="secondary">Generate Doc</button>
+          <button id="downloadLog" class="secondary">Download Response</button>
+        </div>
+      </div>
 
-      <p><a class="btn" href="#">Download DOCX</a></p>
-    </div>
+    </section>
 
-    <footer>
-      <div>Generated on: 2026-01-03</div>
-      <div>Repo: Afares1990/MadfuApitester</div>
-    </footer>
+    <section class="panel">
+      <h3 style="margin:0 0 10px 0">Response</h3>
+      <div id="response" class="response">No response yet.</div>
+    </section>
+
+    <section class="panel">
+      <h3 style="margin:0 0 10px 0">Credit Card Block</h3>
+      <div class="card-block">
+        <div class="row">
+          <div class="col">
+            <label class="small">Cardholder Name</label>
+            <input id="cc_name" type="text" placeholder="Jane Doe" />
+          </div>
+          <div style="width:160px">
+            <label class="small">Card Number</label>
+            <input id="cc_number" type="text" placeholder="4242 4242 4242 4242" />
+          </div>
+          <div style="width:100px">
+            <label class="small">Expiry</label>
+            <input id="cc_expiry" type="text" placeholder="MM/YY" />
+          </div>
+          <div style="width:80px">
+            <label class="small">CVC</label>
+            <input id="cc_cvc" type="text" placeholder="123" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small">Preview (for documentation)</label>
+        <table class="preview-table">
+          <thead>
+            <tr><th>Field</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cardholder</td><td id="p_name">-</td></tr>
+            <tr><td>Number</td><td id="p_number">-</td></tr>
+            <tr><td>Expiry</td><td id="p_expiry">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>Madfu API Tester — Api documentation Guide included in generated doc</footer>
   </div>
+
+  <script>
+    const endpointEl = document.getElementById('endpoint');
+    const methodEl = document.getElementById('method');
+    const headersEl = document.getElementById('headers');
+    const bodyEl = document.getElementById('body');
+    const responseEl = document.getElementById('response');
+
+    const ccName = document.getElementById('cc_name');
+    const ccNumber = document.getElementById('cc_number');
+    const ccExpiry = document.getElementById('cc_expiry');
+    const ccCvc = document.getElementById('cc_cvc');
+
+    const pName = document.getElementById('p_name');
+    const pNumber = document.getElementById('p_number');
+    const pExpiry = document.getElementById('p_expiry');
+
+    function parseHeaders(text){
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      const result = {};
+      lines.forEach(line=>{
+        const idx = line.indexOf(':');
+        if(idx>-1){
+          const key = line.slice(0,idx).trim();
+          const val = line.slice(idx+1).trim();
+          result[key]=val;
+        }
+      });
+      return result;
+    }
+
+    document.getElementById('send').addEventListener('click', async ()=>{
+      const url = endpointEl.value.trim();
+      if(!url){responseEl.textContent='Please provide an endpoint URL.';return}
+      const method = methodEl.value;
+      const headers = parseHeaders(headersEl.value);
+      const opts = {method,headers};
+      if(method !== 'GET' && method !== 'DELETE'){
+        const contentType = document.getElementById('contentType').value;
+        if(contentType) headers['Content-Type'] = contentType;
+        let body = bodyEl.value;
+        if(contentType === 'application/json'){
+          try{ body = JSON.stringify(JSON.parse(body)); }catch(e){}
+        }
+        opts.body = body;
+      }
+
+      responseEl.textContent = 'Loading...';
+      try{
+        const res = await fetch(url, opts);
+        const text = await res.text();
+        const ct = res.headers.get('content-type') || '';
+        if(ct.includes('application/json')){
+          try{ const json = JSON.parse(text); responseEl.textContent = JSON.stringify(json,null,2);}catch(e){responseEl.textContent = text}
+        } else {
+          responseEl.textContent = text;
+        }
+      }catch(err){
+        responseEl.textContent = 'Request error: ' + err.message;
+      }
+    });
+
+    document.getElementById('pretty').addEventListener('click', ()=>{
+      try{
+        const current = responseEl.textContent;
+        const obj = JSON.parse(current);
+        responseEl.textContent = JSON.stringify(obj,null,2);
+      }catch(e){
+        alert('Response is not valid JSON');
+      }
+    });
+
+    document.getElementById('copy').addEventListener('click', ()=>{
+      const txt = responseEl.textContent;
+      navigator.clipboard.writeText(txt).then(()=>alert('Copied response to clipboard')).catch(()=>alert('Copy failed'));
+    });
+
+    document.getElementById('downloadLog').addEventListener('click', ()=>{
+      const text = responseEl.textContent || '';
+      const blob = new Blob([text],{type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'response.txt';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // update preview on credit card inputs
+    [ccName,ccNumber,ccExpiry].forEach(el=>el.addEventListener('input', ()=>{
+      pName.textContent = ccName.value || '-';
+      pNumber.textContent = ccNumber.value || '-';
+      pExpiry.textContent = ccExpiry.value || '-';
+    }));
+
+    // Generate a Word-compatible document (HTML inside a Word file) with blue table and credit card block
+    document.getElementById('generateDoc').addEventListener('click', ()=>{
+      const title = 'Api documentation Guide';
+      const url = endpointEl.value || '-';
+      const method = methodEl.value || '-';
+      const headers = headersEl.value || '';
+      const body = bodyEl.value || '';
+
+      const cardholder = ccName.value || '-';
+      const number = ccNumber.value || '-';
+      const expiry = ccExpiry.value || '-';
+      const cvc = ccCvc.value || '-';
+
+      // Build an HTML document that Word will accept
+      const docHtml = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>${escapeHtml(title)}</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;color:#0b1f3a}
+  h1{color:#0b66c2}
+  .meta{margin-bottom:12px}
+  .blue-table{width:100%;border-collapse:collapse}
+  .blue-table th{background:#0b66c2;color:#fff;padding:8px;text-align:left}
+  .blue-table td{padding:8px;border:1px solid #cfe0fb}
+  .credit-card{border:1px solid #cfe0fb;padding:10px;border-radius:6px;background:#f7fbff;margin-top:12px}
+  .label{font-weight:700;color:#11497a}
+</style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="meta"><strong>Endpoint:</strong> ${escapeHtml(url)} &nbsp; <strong>Method:</strong> ${escapeHtml(method)}</div>
+  <table class="blue-table">
+    <thead>
+      <tr><th>Header / Field</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Headers</td><td><pre>${escapeHtml(headers)}</pre></td></tr>
+      <tr><td>Body</td><td><pre>${escapeHtml(body)}</pre></td></tr>
+      <tr><td>Generated At</td><td>${new Date().toISOString()}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="credit-card">
+    <div class="label">Credit Card</div>
+    <div>Cardholder: ${escapeHtml(cardholder)}</div>
+    <div>Number: ${escapeHtml(number)}</div>
+    <div>Expiry: ${escapeHtml(expiry)}</div>
+    <div>CVC: ${escapeHtml(cvc)}</div>
+  </div>
+
+</body>
+</html>`;
+
+      // Create blob as Word-compatible file. Many versions of Word accept HTML files saved with .doc extension.
+      const blob = new Blob([docHtml],{type:'application/msword'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Api_documentation_Guide.doc';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    });
+
+    function escapeHtml(s){
+      if(!s) return '';
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+  </script>
 </body>
 </html>
