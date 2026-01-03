@@ -1,221 +1,414 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Madfu API Tester</title>
+  <meta charset="utf-8" />
+  <title>Fly Nas — API Flow Tester (v3.1)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;line-height:1.5;margin:20px}
-    .container{max-width:900px;margin:0 auto}
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 24px; line-height: 1.35; }
+    h1,h2 { margin: 0 0 12px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fff; }
+    label { display: block; font-weight: 600; margin-top: 8px; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+    button { margin-top: 12px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .muted { color: #666; font-size: 0.9em; }
+    .danger { color: #b00020; }
 
-    /* Highlight credential fields */
-    .credential {
-      background: #fff8e1; /* soft yellow */
-      border-left: 4px solid #ffca28; /* amber accent */
-      padding: 10px 12px;
-      border-radius: 4px;
-      transition: box-shadow .15s ease;
-    }
-    .credential input, .credential textarea {
-      border:1px solid #e0a800;
-      padding:8px;
-      width:100%;
-      box-sizing:border-box;
-      border-radius: 4px;
-      margin-top:6px;
-      background: #fffef8;
-    }
-    .credential input:focus, .credential textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(255,202,40,0.12)}
+    /* Credential highlight */
+    .cred { border: 2px solid #0b84ff; background: linear-gradient(180deg, #f0f8ff, #ffffff); border-radius: 8px; padding: 8px; }
+    .cred label { color: #0b5fd6; }
+    .cred input { background: transparent; border: 1px solid #cfe9ff; padding: 8px; border-radius: 6px; }
 
-    /* Logs and toggle */
-    .logs-area{margin-top:18px}
-    .logs-header{display:flex;align-items:center;justify-content:space-between}
-    .toggle-btn{background:#f1f3f5;border:1px solid #d7dde3;padding:6px 10px;border-radius:4px;cursor:pointer}
-    .toggle-btn.active{background:#e9f5ff;border-color:#bfe1ff}
+    /* Success box */
+    .success-box { display: none; border: 1px solid #1b7f00; background: #edfbe9; color: #0b5d00; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+    .success-box a { color: #0b5d00; font-weight: 700; text-decoration: underline; }
 
-    #logsBox{border:1px solid #e6e6e6;background:#fafafa;padding:10px;height:220px;overflow:auto;border-radius:4px;margin-top:8px;display:none}
-    #logsBox.minimized{height:40px;overflow:hidden}
+    /* Logs */
+    .log-controls { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    #logContainer.collapsed { display: none; }
+    .log { white-space: pre-wrap; background: #f8f9fa; border: 1px dashed #ccc; padding: 12px; border-radius: 8px; max-height: 50vh; overflow: auto; }
+    .log-mini { border: 1px solid #eee; background:#fafafa; padding:8px; border-radius:8px; font-size:0.9em; color:#333; }
 
-    .log-line{font-family:monospace;font-size:13px;margin-bottom:6px}
-
-    /* Success box for checkoutLink */
-    .success-box{display:none;border-radius:6px;padding:12px;background:#e6ffed;border:1px solid #b7f2c6;color:#005a2b;margin-top:12px}
-    .success-box a{color:#0b6c2f;font-weight:600}
-
-    /* Small utilities */
-    .btn{padding:8px 12px;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer}
-    label{font-weight:600}
-    .field{margin-bottom:12px}
-
+    .copy-btn { margin-left:8px; padding:6px 8px; font-size:0.9em; }
+    body { background: #f2f4f7; }
+    .container { max-width: 980px; margin: 0 auto; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Madfu API Tester</h1>
+    <h1>Fly Nas — API Flow Tester (v3.1)</h1>
+    <p class="muted">Flow: <strong>1) Initialize Token → 2) Sign-in → 3) CreateOrder</strong> | PlatformTypeId default <strong>5</strong></p>
 
-    <section aria-labelledby="credentials-heading" class="credential" id="credentials">
-      <h2 id="credentials-heading">Credentials (highlighted)</h2>
-      <div class="field">
-        <label for="apiKey">API Key</label>
-        <input id="apiKey" name="apiKey" placeholder="sk-..." autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="apiSecret">API Secret</label>
-        <input id="apiSecret" name="apiSecret" placeholder="secret" autocomplete="off" type="password">
-      </div>
-    </section>
-
-    <section style="margin-top:14px">
-      <label for="requestBody">Request Body</label>
-      <textarea id="requestBody" rows="6" placeholder='{"amount":100, ...}' style="width:100%"></textarea>
-    </section>
-
-    <div style="margin-top:12px">
-      <button id="createOrderBtn" class="btn">Create Order</button>
-      <button id="clearLogsBtn" class="btn" style="margin-left:8px">Clear Logs</button>
-    </div>
-
-    <!-- Success box: hidden until we have a checkoutLink -->
-    <div id="successBox" class="success-box" role="status" aria-live="polite">
-      <strong>Order created.</strong>
-      <div id="checkoutLinkWrapper">Checkout: <a id="checkoutLink" href="#" target="_blank" rel="noopener">—</a></div>
-    </div>
-
-    <!-- Logs area with toggle (collapsed by default) -->
-    <div class="logs-area">
-      <div class="logs-header">
-        <h3>Logs</h3>
+    <div class="card">
+      <h2>Environment</h2>
+      <div class="row">
         <div>
-          <button id="toggleLogsBtn" class="toggle-btn" aria-expanded="false">Show logs</button>
+          <label>Base URL</label>
+          <select id="baseUrl">
+            <option value="https://api.staging.madfu.com.sa">Staging</option>
+            <option value="https://api.madfu.com.sa">Production</option>
+          </select>
+        </div>
+        <div>
+          <label>Proxy URL (optional)</label>
+          <input id="proxyUrl" value="/api/proxy" placeholder="Use /api/proxy after deploying to Vercel (or full https://your-app.vercel.app/api/proxy)" />
         </div>
       </div>
 
-      <div id="logsBox" aria-hidden="true">
-        <!-- log lines inserted here -->
+      <h3>Headers (required by API)</h3>
+      <div class="row">
+        <div class="cred">
+          <label for="apiKey">APIKey</label>
+          <input id="apiKey" placeholder="enter APIKey" autocomplete="off" />
+        </div>
+        <div class="cred">
+          <label for="appCode">AppCode</label>
+          <input id="appCode" placeholder="enter AppCode" autocomplete="off" />
+        </div>
       </div>
+      <div class="row">
+        <div class="cred">
+          <label for="basicAuth">Authorization (Basic …)</label>
+          <input id="basicAuth" placeholder="Basic xxxxxx (or only base64 — we will prefix)" autocomplete="off" />
+        </div>
+        <div>
+          <label for="platformTypeId">PlatformTypeId</label>
+          <input id="platformTypeId" value="5" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>System Info</label>
+          <input id="systemInfo" value="web" />
+        </div>
+        <div>
+          <label>UUID (auto)</label>
+          <input id="runUuid" placeholder="auto-generated" />
+        </div>
+      </div>
+
+      <h3>Sign-in</h3>
+      <div class="row">
+        <div class="cred">
+          <label for="username">Username</label>
+          <input id="username" placeholder="user@example.com" autocomplete="off" />
+        </div>
+        <div class="cred">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="off" />
+        </div>
+      </div>
+      <p class="muted danger">Do not commit real keys or credentials to Git — fill them at runtime.</p>
     </div>
 
+    <div class="card">
+      <h2>Order Payload</h2>
+      <div class="row">
+        <div>
+          <label>Taxes</label>
+          <input id="taxes" type="number" value="0" />
+        </div>
+        <div>
+          <label>ActualValue</label>
+          <input id="actualValue" type="number" value="500" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Amount</label>
+          <input id="amount" type="number" value="500" />
+        </div>
+        <div>
+          <label>MerchantReference (auto)</label>
+          <input id="merchantRef" placeholder="auto-generated" />
+        </div>
+      </div>
+
+      <h3>OrderDetails (single item)</h3>
+      <div class="row">
+        <div><label>Product Name</label><input id="productName" value="coffee" /></div>
+        <div><label>SKU</label><input id="sku" value="1" /></div>
+      </div>
+      <div class="row">
+        <div><label>Product Image</label><input id="productImage" value="test" /></div>
+        <div><label>Count</label><input id="count" type="number" value="1" /></div>
+      </div>
+      <label>Total Amount</label>
+      <input id="totalAmount" type="number" value="500" />
+
+      <h3>Guest</h3>
+      <div class="row">
+        <div><label>Lang</label><input id="lang" value="en" /></div>
+        <div><label>Customer Name</label><input id="customerName" value="Ahmed" /></div>
+      </div>
+      <div class="row">
+        <div><label>Customer Mobile</label><input id="customerMobile" value="501110002" /></div>
+        <div><label>Shipping Address</label><input id="shippingAddress" value="kingfahd" /></div>
+      </div>
+
+      <h3>Merchant URLs</h3>
+      <div class="row">
+        <div><label>Success</label><input id="successUrl" value="https://example.com/#/Success" /></div>
+        <div><label>Failure</label><input id="failureUrl" value="https://example.com/#/Failure" /></div>
+      </div>
+      <label>Cancel</label>
+      <input id="cancelUrl" value="https://example.com/#/Cancel" />
+    </div>
+
+    <div class="card">
+      <button id="runBtn">Run Test ▶</button>
+
+      <div id="successBox" class="success-box" role="status" aria-live="polite">
+        <span id="checkoutText"></span>
+        <button id="copyCheckout" class="copy-btn">Copy</button>
+        <a id="openCheckout" href="#" target="_blank" rel="noopener" style="margin-left:12px; display:none;">Open</a>
+      </div>
+
+      <div class="log-controls">
+        <div class="log-mini">Logs are minimized by default — expand when needed.</div>
+        <button id="toggleLogsBtn" class="copy-btn">Show logs</button>
+      </div>
+
+      <div id="logContainer" class="collapsed">
+        <div class="log" id="log"></div>
+      </div>
+    </div>
   </div>
 
-  <script>
-    const createOrderBtn = document.getElementById('createOrderBtn');
-    const clearLogsBtn = document.getElementById('clearLogsBtn');
-    const logsBox = document.getElementById('logsBox');
-    const toggleLogsBtn = document.getElementById('toggleLogsBtn');
-    const successBox = document.getElementById('successBox');
-    const checkoutLink = document.getElementById('checkoutLink');
-    const checkoutLinkWrapper = document.getElementById('checkoutLinkWrapper');
+<script>
+(function() {
+  const logEl = document.getElementById('log');
+  const logContainer = document.getElementById('logContainer');
+  const toggleLogsBtn = document.getElementById('toggleLogsBtn');
+  const successBox = document.getElementById('successBox');
+  const checkoutText = document.getElementById('checkoutText');
+  const copyCheckout = document.getElementById('copyCheckout');
+  const openCheckout = document.getElementById('openCheckout');
 
-    // Ensure logs are collapsed by default
-    let logsVisible = false;
-    function updateLogsVisibility(){
-      if(logsVisible){
-        logsBox.style.display = 'block';
-        logsBox.setAttribute('aria-hidden','false');
-        toggleLogsBtn.textContent = 'Hide logs';
-        toggleLogsBtn.classList.add('active');
-        toggleLogsBtn.setAttribute('aria-expanded','true');
-      } else {
-        logsBox.style.display = 'none';
-        logsBox.setAttribute('aria-hidden','true');
-        toggleLogsBtn.textContent = 'Show logs';
-        toggleLogsBtn.classList.remove('active');
-        toggleLogsBtn.setAttribute('aria-expanded','false');
-      }
+  let logsCollapsed = true;
+  const uuid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  const uniqueRef = () => 'ref-' + Date.now();
+
+  function appendLog(title, data) {
+    const safe = (v) => typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+    logEl.textContent += `\n\n=== ${title} ===\n` + safe(data);
+  }
+
+  toggleLogsBtn.addEventListener('click', () => {
+    logsCollapsed = !logsCollapsed;
+    if (logsCollapsed) {
+      logContainer.classList.add('collapsed');
+      toggleLogsBtn.textContent = 'Show logs';
+    } else {
+      logContainer.classList.remove('collapsed');
+      toggleLogsBtn.textContent = 'Hide logs';
     }
-    updateLogsVisibility(); // collapsed by default
+  });
 
-    toggleLogsBtn.addEventListener('click', ()=>{
-      logsVisible = !logsVisible;
-      updateLogsVisibility();
-    });
-
-    clearLogsBtn.addEventListener('click', ()=>{
-      logsBox.innerHTML = '';
-      log('Logs cleared');
-    });
-
-    function log(msg, level='info'){
-      const el = document.createElement('div');
-      el.className = 'log-line';
-      el.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-      logsBox.appendChild(el);
-      // auto-scroll when visible
-      if(logsVisible){ logsBox.scrollTop = logsBox.scrollHeight; }
+  copyCheckout.addEventListener('click', async () => {
+    const text = checkoutText.textContent || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      copyCheckout.textContent = 'Copied';
+      setTimeout(() => copyCheckout.textContent = 'Copy', 1500);
+    } catch (e) {
+      copyCheckout.textContent = 'Copy failed';
+      setTimeout(() => copyCheckout.textContent = 'Copy', 1500);
     }
+  });
 
-    // Handle create order button - the integration point where a create order request happens
-    createOrderBtn.addEventListener('click', async ()=>{
-      // gather inputs (the real app should call the real API)
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const apiSecret = document.getElementById('apiSecret').value.trim();
-      const requestBody = document.getElementById('requestBody').value.trim();
+  function buildHeaders(includeToken, token) {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const appCode = document.getElementById('appCode').value.trim();
+    let basicAuth = document.getElementById('basicAuth') ? document.getElementById('basicAuth').value.trim() : '';
+    if (basicAuth && !basicAuth.startsWith('Basic ')) basicAuth = `Basic ${basicAuth}`;
+    const platformTypeId = document.getElementById('platformTypeId').value.trim() || '5';
 
-      log('Create order initiated');
+    const headers = {
+      'accept': 'application/json',
+      'content-type': 'application/json',
+      'APIKey': apiKey,
+      'AppCode': appCode,
+      'Authorization': basicAuth,
+      'PlatformTypeId': platformTypeId
+    };
+    if (includeToken && token) headers['Token'] = token;
+    return headers;
+  }
 
-      try {
-        // Example fetch - replace URL and options with your real call
-        // For the UI we show how to extract checkoutLink from the response
-        const payload = requestBody ? JSON.parse(requestBody) : {};
-        // Show a fake network call here for demo; replace with your code.
-        log('Sending request...');
-
-        // Simulated API call (replace with actual fetch)
-        const fakeResponse = await fakeCreateOrderApi(payload);
-
-        handleCreateOrderResponse(fakeResponse);
-      } catch(err) {
-        log('Create order failed: ' + (err.message || err));
-        // Hide success box if present
-        successBox.style.display = 'none';
-      }
-    });
-
-    function handleCreateOrderResponse(response){
-      // Extract checkoutLink (be defensive)
-      // Many APIs might return { checkoutLink: 'https://...' } or nested inside data: { checkoutLink: '...' }
-      let link = null;
-      if(!response) {
-        log('Empty response received');
-      } else {
-        if(response.checkoutLink) link = response.checkoutLink;
-        else if(response.data && response.data.checkoutLink) link = response.data.checkoutLink;
-        else if(response.result && response.result.checkoutLink) link = response.result.checkoutLink;
-
-        log('Create order response received: ' + JSON.stringify(response));
-      }
-
-      if(link){
-        checkoutLink.href = link;
-        checkoutLink.textContent = link;
-        successBox.style.display = 'block';
-        // reveal logs so user can inspect if needed, but keep collapsed state preference
-        // Optionally auto-open logs for visibility - we do not auto-open to respect default collapsed state
-        // logsVisible = true; updateLogsVisibility();
-      } else {
-        successBox.style.display = 'none';
-        log('checkoutLink not found in response');
-      }
-    }
-
-    // A small mock to demonstrate behavior; in production replace this with a real fetch() call
-    function fakeCreateOrderApi(payload){
-      return new Promise((resolve)=>{
-        setTimeout(()=>{
-          // Simulated response structure — the UI will pick up checkoutLink from a few possible shapes
-          const res = {
-            checkoutLink: 'https://checkout.example.com/session/abc123',
-            id: 'order_123',
-            ok: true
-          };
-          resolve(res);
-        }, 800);
+  async function doFetch(url, method, headers, body) {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
       });
+      const status = res.status;
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = null; }
+
+      if (!res.ok) {
+        throw {
+          status,
+          headers: Object.fromEntries(res.headers.entries()),
+          json,
+          raw: text
+        };
+      }
+      return json ?? { raw: text };
+    } catch (e) {
+      throw {
+        fetchError: true,
+        message: e?.message || String(e),
+        details: e
+      };
     }
+  }
 
-    // initial message in logs
-    log('UI ready — credential fields highlighted.');
+  function withProxy(targetUrl) {
+    const proxyBase = (document.getElementById('proxyUrl').value || '').trim();
+    if (!proxyBase) return { url: targetUrl, viaProxy: false };
+    const proxied = `${proxyBase}?url=${encodeURIComponent(targetUrl)}`;
+    return { url: proxied, viaProxy: true };
+  }
 
-  </script>
+  function findCheckoutLink(obj) {
+    if (!obj) return null;
+    const tryKeys = (o, keys) => {
+      for (const k of keys) {
+        if (o && typeof o === 'object' && (o[k] !== undefined && o[k] !== null)) return o[k];
+      }
+      return null;
+    };
+    const keys = ['checkoutLink','CheckoutLink','checkoutUrl','CheckoutUrl','paymentUrl','PaymentUrl','url','Url','payment_url','redirectUrl','redirect_url'];
+    let found = tryKeys(obj, keys);
+    if (found) return found;
+    const nests = ['data','Data','result','Result','response','Response'];
+    for (const n of nests) {
+      if (obj[n]) {
+        found = tryKeys(obj[n], keys);
+        if (found) return found;
+      }
+    }
+    try {
+      const s = JSON.stringify(obj);
+      const m = s.match(/https?:\/\/[^"'}\\s]+/);
+      if (m) return m[0];
+    } catch (e) { }
+    return null;
+  }
+
+  document.getElementById('runBtn').addEventListener('click', async () => {
+    successBox.style.display = 'none';
+    checkoutText.textContent = '';
+    openCheckout.style.display = 'none';
+    logEl.textContent = '';
+    if (logsCollapsed) { } else { logContainer.classList.remove('collapsed'); }
+
+    const baseUrl = document.getElementById('baseUrl').value.trim();
+    const systemInfo = document.getElementById('systemInfo').value.trim();
+    const userName = document.getElementById('username').value.trim();
+    const password = document.getElementById('password') ? document.getElementById('password').value : '';
+
+    const theUuid = uuid();
+    document.getElementById('runUuid').value = theUuid;
+    document.getElementById('merchantRef').value = uniqueRef();
+
+    try {
+      // Step 1: Init Token
+      const initEndpoint = `${baseUrl}/merchants/token/init`;
+      const initBody = { uuid: theUuid, systemInfo };
+      const { url: initUrl } = withProxy(initEndpoint);
+      const initHeaders = buildHeaders(false);
+      appendLog('Request: Init Token', { url: initUrl, headers: initHeaders, body: initBody });
+      const initResp = await doFetch(initUrl, 'POST', initHeaders, initBody);
+      appendLog('Init Token Response', initResp);
+      const initToken = initResp?.token || initResp?.Token || initResp?.data?.token || initResp?.Data?.Token || initResp?.result?.token || initResp?.Result?.Token;
+
+      // Step 2: Sign-in
+      const signEndpoint = `${baseUrl}/Merchants/sign-in`;
+      const signBody = { userName, password };
+      const { url: signUrl } = withProxy(signEndpoint);
+      const signHeaders = buildHeaders(true, initToken);
+      appendLog('Request: Sign-in', { url: signUrl, headers: signHeaders, body: signBody });
+      const signResp = await doFetch(signUrl, 'POST', signHeaders, signBody);
+      appendLog('Sign-in Response', signResp);
+      const signinToken = signResp?.token || signResp?.Token || signResp?.data?.token || signResp?.Data?.Token || signResp?.result?.token || signResp?.Result?.Token;
+
+      // Step 3: CreateOrder
+      const taxes = Number(document.getElementById('taxes').value);
+      const actualValue = Number(document.getElementById('actualValue').value);
+      const amount = Number(document.getElementById('amount').value);
+      const merchantReference = document.getElementById('merchantRef').value || uniqueRef();
+
+      const orderDetails = [{
+        productName: document.getElementById('productName').value.trim(),
+        SKU: document.getElementById('sku').value.trim(),
+        productImage: document.getElementById('productImage').value.trim(),
+        count: Number(document.getElementById('count').value),
+        totalAmount: Number(document.getElementById('totalAmount').value)
+      }];
+
+      const guestOrderData = {
+        Lang: document.getElementById('lang').value.trim(),
+        CustomerName: document.getElementById('customerName').value.trim(),
+        CustomerMobile: document.getElementById('customerMobile').value.trim(),
+        ShippingAddress: document.getElementById('shippingAddress').value.trim()
+      };
+
+      const merchantUrls = {
+        Success: document.getElementById('successUrl').value.trim(),
+        Failure: document.getElementById('failureUrl').value.trim(),
+        Cancel: document.getElementById('cancelUrl').value.trim()
+      };
+
+      const createEndpoint = `${baseUrl}/Merchants/Checkout/CreateOrder`;
+      const { url: createUrl } = withProxy(createEndpoint);
+      const createHeaders = buildHeaders(true, signinToken);
+      const createBody = {
+        Order: {
+          Taxes: taxes,
+          ActualValue: actualValue,
+          Amount: amount,
+          MerchantReference: merchantReference
+        },
+        OrderDetails: orderDetails,
+        GuestOrderData: guestOrderData,
+        MerchantUrls: merchantUrls
+      };
+
+      appendLog('Request: CreateOrder', { url: createUrl, headers: createHeaders, body: createBody });
+      const createResp = await doFetch(createUrl, 'POST', createHeaders, createBody);
+      appendLog('CreateOrder Response', createResp);
+
+      const checkoutLink = findCheckoutLink(createResp);
+      if (checkoutLink) {
+        checkoutText.textContent = checkoutLink;
+        openCheckout.href = checkoutLink;
+        openCheckout.style.display = 'inline-block';
+        successBox.style.display = 'block';
+        appendLog('Flow Completed', { uuid: theUuid, merchantReference, checkoutLink });
+      } else {
+        successBox.style.display = 'block';
+        checkoutText.textContent = 'Success (no checkout link found in response)';
+        copyCheckout.style.display = 'none';
+        openCheckout.style.display = 'none';
+        appendLog('Flow Completed (no checkoutLink)', { uuid: theUuid, merchantReference });
+      }
+
+    } catch (err) {
+      appendLog('Error', err);
+      logContainer.classList.remove('collapsed');
+      toggleLogsBtn.textContent = 'Hide logs';
+      logsCollapsed = false;
+      successBox.style.display = 'none';
+    }
+  });
+})();
+</script>
 </body>
 </html>
