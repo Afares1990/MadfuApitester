@@ -1,241 +1,208 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Madfu API Tester</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fly Nas — API Flow Tester (v3.1)</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;margin:20px;background:#f7f7fb;color:#222}
-    .container{max-width:980px;margin:0 auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 24px rgba(25,25,40,0.06)}
-    h1{font-size:20px;margin:0 0 12px}
-    label{display:block;margin:8px 0 4px;font-weight:600}
-    input[type=text], input[type=password], textarea, select{width:100%;padding:8px;border:1px solid #d9dce6;border-radius:6px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .field-note{font-size:12px;color:#666;margin-top:6px}
-    .highlight{background:linear-gradient(90deg,#fff9db,#fff3d0);border:1px solid #f0d98a}
-    .credentials{display:flex;gap:8px}
-    .small{font-size:13px}
-    .buttons{display:flex;gap:8px;margin-top:12px}
-    button{padding:8px 12px;border-radius:6px;border:none;cursor:pointer;background:#2563eb;color:#fff}
-    button.secondary{background:#e6eefb;color:#123}
-    button:disabled{opacity:0.5;cursor:not-allowed}
-    .logs{margin-top:12px;border-radius:6px;overflow:hidden;border:1px solid #e3e7ef}
-    .logs-header{background:#fafbfd;padding:8px;display:flex;align-items:center;justify-content:space-between}
-    .logs-body{height:120px;overflow:auto;padding:10px;background:#0b1220;color:#e6f3ff;font-family:monospace;font-size:13px}
-    .collapsed .logs-body{height:28px;overflow:hidden}
-    .checkout-box{display:flex;gap:8px;align-items:center}
-    .preview{border:1px dashed #d0d7e6;padding:10px;border-radius:6px;background:#fcfeff;margin-top:10px}
-    .meta{display:flex;gap:12px;align-items:center;margin-top:8px}
-    .note{font-size:12px;color:#666}
+    body{font-family:Segoe UI, Roboto, Arial, sans-serif;background:#f4f6f8;margin:0;padding:20px;color:#222}
+    .container{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .version{color:#666;font-size:13px}
+
+    .panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:16px;margin-bottom:14px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 200px;min-width:200px}
+    label{display:block;font-size:13px;color:#333;margin-bottom:6px}
+    input[type=text], input[type=password], select, textarea{width:100%;padding:8px 10px;border:1px solid #d1d7dc;border-radius:6px;font-size:14px}
+
+    /* highlighted credential fields */
+    .cred {background:linear-gradient(90deg,#fffbe6,#fff3d1);border:1px solid #ffd24d}
+    .admin-highlight{background:linear-gradient(90deg,#fff0f6,#ffe6ee);border:1px solid #ff8fb1}
+
+    .section-title{font-weight:600;margin-bottom:10px}
+
+    /* Order fields full */
+    .order-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .order-grid .col{min-width:0}
+
+    /* Logs minimized */
+    .logs{height:80px;overflow:auto;background:#0b1220;color:#cfe; padding:8px;border-radius:6px;font-family:monospace;font-size:13px}
+    .logs.collapsed{height:40px}
+
+    .success-box{background:#e6ffef;border:1px solid #3ac17b;color:#064d2c;padding:10px;border-radius:6px;display:none}
+    .success-box.show{display:block}
+
+    .actions{display:flex;gap:10px;align-items:center}
+    button{background:#0b5fff;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer;font-weight:600}
+    button.secondary{background:#e9eef6;color:#0b3a66}
+    .btn-generate{background:#1d7a1d}
+
+    .small{font-size:12px;color:#666}
+
+    footer{margin-top:18px;text-align:center;color:#888;font-size:13px}
+
+    @media(max-width:800px){.order-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Madfu API Tester</h1>
-
-    <div class="row">
+    <header>
       <div>
-        <label for="apiUrl">API URL</label>
-        <input id="apiUrl" type="text" placeholder="https://api.example.com/endpoint">
+        <h1>Fly Nas — API Flow Tester <span class="version">(v3.1)</span></h1>
+        <div class="small">Interactive UI for testing Fly Nas API flows</div>
+      </div>
+      <div class="actions">
+        <button id="btnPreview" class="secondary">Preview</button>
+        <button id="btnGenerate" class="btn-generate">Preview & Generate Word</button>
+      </div>
+    </header>
 
-        <label for="method">HTTP Method</label>
-        <select id="method">
-          <option>POST</option>
-          <option>GET</option>
-          <option>PUT</option>
-          <option>DELETE</option>
-        </select>
-
-        <label for="checkout">Checkout Link</label>
-        <div class="checkout-box">
-          <input id="checkout" type="text" placeholder="https://checkout.example.com/abc" />
+    <section class="panel">
+      <div class="section-title">Credentials</div>
+      <div class="row">
+        <div class="col">
+          <label for="clientId">Client ID</label>
+          <input id="clientId" class="cred" type="text" placeholder="Enter Client ID" />
         </div>
-
-        <label for="messageTemplate">Message Body Template (placeholders like {{AdminUser}}, {{AdminPassword}}, {{CheckoutLink}}, {{Reference}}, {{Message}})</label>
-        <textarea id="messageTemplate" rows="8">Dear Customer,
-
-Your admin username is {{AdminUser}} and password is {{AdminPassword}}.
-You can checkout here: {{CheckoutLink}}
-
-Reference: {{Reference}}
-
-Message:
-{{Message}}
-
-Regards,
-Support Team</textarea>
+        <div class="col">
+          <label for="clientSecret">Client Secret</label>
+          <input id="clientSecret" class="cred" type="text" placeholder="Enter Client Secret" />
+        </div>
+        <div class="col">
+          <label for="env">Environment</label>
+          <select id="env">
+            <option value="sandbox">Sandbox</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
       </div>
 
-      <div>
-        <label>Credentials (highlighted Admin credentials)</label>
-        <div class="credentials">
-          <div style="flex:1">
-            <input id="adminUser" type="text" class="highlight" placeholder="AdminUser">
-            <div class="field-note small">Highlighted AdminUser field</div>
-          </div>
-          <div style="flex:1">
-            <input id="adminPassword" type="password" class="highlight" placeholder="AdminPassword">
-            <div class="field-note small">Highlighted AdminPassword field</div>
-          </div>
+      <div style="margin-top:12px" class="row">
+        <div class="col">
+          <label for="AdminUser">Admin User</label>
+          <input id="AdminUser" class="admin-highlight" type="text" placeholder="AdminUser" />
         </div>
-
-        <label for="reference">Reference</label>
-        <input id="reference" type="text" placeholder="Ref12345">
-
-        <label for="body">Message Body</label>
-        <textarea id="body" rows="8" placeholder="A short message body to include in the document">Hello, your request was completed successfully.</textarea>
-
-        <div class="meta">
-          <div class="note">After a successful run the "Generate Document" button will enable and the preview will show the filled template.</div>
+        <div class="col">
+          <label for="AdminPassword">Admin Password</label>
+          <input id="AdminPassword" class="admin-highlight" type="password" placeholder="AdminPassword" />
         </div>
-
-        <div class="buttons">
-          <button id="runBtn">Run</button>
-          <button id="previewBtn" class="secondary">Update Preview</button>
-          <button id="generateBtn" disabled>Generate Document</button>
+        <div class="col">
+          <label for="role">Role</label>
+          <input id="role" type="text" placeholder="Optional role" />
         </div>
-
-        <div id="preview" class="preview" aria-live="polite">Preview will appear here after updating or after a successful run.</div>
       </div>
-    </div>
+    </section>
 
-    <div id="logs" class="logs collapsed" style="margin-top:14px">
-      <div class="logs-header">
-        <div style="display:flex;gap:8px;align-items:center">
-          <strong>Logs</strong>
-          <span class="field-note">(minimized)</span>
+    <section class="panel">
+      <div class="section-title">Full Order Fields</div>
+      <div class="order-grid">
+        <div>
+          <label for="orderId">Order ID</label>
+          <input id="orderId" type="text" placeholder="Order ID" />
         </div>
         <div>
-          <button id="toggleLogs" class="secondary" style="background:#fff;border:1px solid #d9dce6;color:#123">Expand</button>
+          <label for="customerName">Customer Name</label>
+          <input id="customerName" type="text" placeholder="Full name" />
+        </div>
+        <div>
+          <label for="customerEmail">Customer Email</label>
+          <input id="customerEmail" type="text" placeholder="email@example.com" />
+        </div>
+
+        <div>
+          <label for="flightNumber">Flight Number</label>
+          <input id="flightNumber" type="text" placeholder="e.g. XY123" />
+        </div>
+        <div>
+          <label for="departure">Departure (IATA)</label>
+          <input id="departure" type="text" placeholder="JED" />
+        </div>
+        <div>
+          <label for="arrival">Arrival (IATA)</label>
+          <input id="arrival" type="text" placeholder="RUH" />
+        </div>
+
+        <div>
+          <label for="departureDate">Departure Date</label>
+          <input id="departureDate" type="text" placeholder="YYYY-MM-DD" />
+        </div>
+        <div>
+          <label for="passengers">Passengers</label>
+          <input id="passengers" type="text" placeholder="1" />
+        </div>
+        <div>
+          <label for="amount">Amount</label>
+          <input id="amount" type="text" placeholder="100.00" />
+        </div>
+
+        <div style="grid-column:1 / -1">
+          <label for="notes">Notes / Additional Data</label>
+          <textarea id="notes" rows="3" placeholder="Any order-related notes"></textarea>
         </div>
       </div>
-      <div id="logsBody" class="logs-body">Logs will appear here.</div>
-    </div>
 
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button id="btnSend">Send Request</button>
+        <button id="btnReset" class="secondary">Reset</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">Response & Logs</div>
+      <div class="success-box" id="successBox">Success: Request completed successfully.</div>
+
+      <div style="margin-top:8px" class="row">
+        <div style="flex:1 1 60%">
+          <label>Response Preview</label>
+          <textarea id="responsePreview" rows="6" style="width:100%;font-family:monospace;border-radius:6px;padding:8px;border:1px solid #d1d7dc"></textarea>
+        </div>
+        <div style="flex:1 1 35%">
+          <label>Logs (minimized)</label>
+          <div id="logs" class="logs collapsed">[INFO] Ready. Logs will appear here. Click "Expand Logs" to view more.</div>
+          <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+            <button id="toggleLogs" class="secondary">Expand Logs</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Built for Fly Nas testing — UI restored to accepted look
+    </footer>
   </div>
 
-<script>
-  const runBtn = document.getElementById('runBtn');
-  const previewBtn = document.getElementById('previewBtn');
-  const generateBtn = document.getElementById('generateBtn');
-  const logs = document.getElementById('logs');
-  const logsBody = document.getElementById('logsBody');
-  const toggleLogs = document.getElementById('toggleLogs');
+  <script>
+    const successBox = document.getElementById('successBox');
+    const logs = document.getElementById('logs');
+    const toggleLogs = document.getElementById('toggleLogs');
+    const btnPreview = document.getElementById('btnPreview');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const btnSend = document.getElementById('btnSend');
 
-  let lastRunSuccess = false;
-
-  function addLog(msg){
-    const time = new Date().toISOString().replace('T',' ').split('.')[0];
-    logsBody.textContent = `[${time}] ${msg}\n` + logsBody.textContent;
-  }
-
-  toggleLogs.addEventListener('click', ()=>{
-    if(logs.classList.contains('collapsed')){
-      logs.classList.remove('collapsed');
-      toggleLogs.textContent = 'Collapse';
-    } else {
-      logs.classList.add('collapsed');
-      toggleLogs.textContent = 'Expand';
-    }
-  });
-
-  function replacePlaceholders(template, data){
-    return template.replace(/{{\s*([A-Za-z0-9_]+)\s*}}/g, (m, key)=>{
-      return data[key] !== undefined ? data[key] : m;
+    toggleLogs.addEventListener('click', ()=>{
+      const expanded = logs.classList.toggle('collapsed');
+      toggleLogs.textContent = expanded ? 'Collapse Logs' : 'Expand Logs';
+      if(!expanded) logs.scrollTop = logs.scrollHeight;
     });
-  }
 
-  function updatePreview(){
-    const template = document.getElementById('messageTemplate').value;
-    const data = {
-      AdminUser: document.getElementById('adminUser').value || '',
-      AdminPassword: document.getElementById('adminPassword').value || '',
-      CheckoutLink: document.getElementById('checkout').value || '',
-      Reference: document.getElementById('reference').value || '',
-      Message: document.getElementById('body').value || ''
-    };
-    const html = replacePlaceholders(template, data).replace(/\n/g, '<br>');
-    document.getElementById('preview').innerHTML = html;
-    addLog('Preview updated');
-  }
+    btnSend.addEventListener('click', ()=>{
+      // Simulate response
+      document.getElementById('responsePreview').value = JSON.stringify({status:'ok',orderId:document.getElementById('orderId').value},null,2);
+      logs.classList.remove('collapsed');
+      logs.textContent += '\n[INFO] Request sent at ' + new Date().toISOString();
+      successBox.classList.add('show');
+    });
 
-  previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); updatePreview(); });
+    btnPreview.addEventListener('click', ()=>{
+      alert('Preview opened (UI placeholder).');
+    });
 
-  runBtn.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    const url = document.getElementById('apiUrl').value.trim();
-    if(!url){ addLog('No API URL provided'); alert('Please provide API URL'); return; }
-    const method = document.getElementById('method').value || 'POST';
-    const bodyText = document.getElementById('body').value || '';
-
-    addLog(`Starting ${method} ${url}`);
-    try{
-      const headers = {'Content-Type':'application/json'};
-      const user = document.getElementById('adminUser').value;
-      const pass = document.getElementById('adminPassword').value;
-      if(user && pass){
-        headers['Authorization'] = 'Basic ' + btoa(user + ':' + pass);
-      }
-      const fetchOptions = {method, headers};
-      if(method !== 'GET' && method !== 'DELETE'){
-        try{ fetchOptions.body = JSON.stringify({message: bodyText, reference: document.getElementById('reference').value || ''}); }catch(err){ fetchOptions.body = bodyText; }
-      }
-      const resp = await fetch(url, fetchOptions);
-      const text = await resp.text();
-      addLog(`HTTP ${resp.status} ${resp.statusText}`);
-      if(resp.ok){
-        lastRunSuccess = true;
-        generateBtn.disabled = false;
-        addLog('Run successful — Generate Document enabled');
-      } else {
-        lastRunSuccess = false;
-        generateBtn.disabled = true;
-        addLog('Run failed — Generate Document disabled');
-      }
-      // Put abbreviated log into the visible area
-      logsBody.textContent = text.slice(0, 400) + (text.length>400? '\n... (truncated)':'' ) + '\n\n' + logsBody.textContent;
-      updatePreview();
-    }catch(err){
-      addLog('Error: ' + err.message);
-      lastRunSuccess = false;
-      generateBtn.disabled = true;
-      alert('Request failed: '+err.message);
-    }
-  });
-
-  function generateDocument(){
-    if(!lastRunSuccess){ alert('Document generation is only allowed after a successful run.'); return; }
-    const template = document.getElementById('messageTemplate').value;
-    const data = {
-      AdminUser: document.getElementById('adminUser').value || '',
-      AdminPassword: document.getElementById('adminPassword').value || '',
-      CheckoutLink: document.getElementById('checkout').value || '',
-      Reference: document.getElementById('reference').value || '',
-      Message: document.getElementById('body').value || ''
-    };
-    let filled = replacePlaceholders(template, data);
-
-    // Build an HTML document that Word can open. Using .doc with HTML content is widely supported.
-    const docHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Document</title></head><body>${filled.replace(/\n/g,'<br>')}</body></html>`;
-    const blob = new Blob([docHtml], {type: 'application/msword'});
-    const url = URL.createObjectURL(blob);
-
-    // Create a download link
-    const a = document.createElement('a');
-    a.href = url;
-    const safeRef = (data.Reference || 'document').replace(/[^a-z0-9-_]/ig,'_');
-    a.download = `${safeRef || 'document'}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    addLog('Document generated and download started');
-  }
-
-  generateBtn.addEventListener('click', (e)=>{ e.preventDefault(); generateDocument(); });
-
-  // Initialize preview from defaults
-  updatePreview();
-</script>
+    btnGenerate.addEventListener('click', ()=>{
+      // Placeholder: In real implementation this would prepare and download a Word doc
+      alert('Preview & Generate Word: generating document (placeholder).');
+    });
+  </script>
 </body>
 </html>
