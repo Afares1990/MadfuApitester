@@ -3,229 +3,239 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Madfu API Tester (Merchant)</title>
+  <title>Madfu API Tester</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 20px; }
-    label { display:block; margin-top:10px; }
-    input[type=text], input[type=password], textarea { width:100%; padding:8px; box-sizing:border-box; }
-    textarea { min-height:80px; }
-    .row { display:flex; gap:10px; }
-    .col { flex:1; }
-    .controls { margin-top:12px; }
-    #logs { height:200px; white-space:pre-wrap; overflow:auto; background:#f7f7f7; padding:8px; }
-    .small { font-size:0.9em; color:#555; }
-    .button { padding:8px 12px; margin-right:8px; }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;margin:20px;background:#f7f7fb;color:#222}
+    .container{max-width:980px;margin:0 auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 24px rgba(25,25,40,0.06)}
+    h1{font-size:20px;margin:0 0 12px}
+    label{display:block;margin:8px 0 4px;font-weight:600}
+    input[type=text], input[type=password], textarea, select{width:100%;padding:8px;border:1px solid #d9dce6;border-radius:6px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .field-note{font-size:12px;color:#666;margin-top:6px}
+    .highlight{background:linear-gradient(90deg,#fff9db,#fff3d0);border:1px solid #f0d98a}
+    .credentials{display:flex;gap:8px}
+    .small{font-size:13px}
+    .buttons{display:flex;gap:8px;margin-top:12px}
+    button{padding:8px 12px;border-radius:6px;border:none;cursor:pointer;background:#2563eb;color:#fff}
+    button.secondary{background:#e6eefb;color:#123}
+    button:disabled{opacity:0.5;cursor:not-allowed}
+    .logs{margin-top:12px;border-radius:6px;overflow:hidden;border:1px solid #e3e7ef}
+    .logs-header{background:#fafbfd;padding:8px;display:flex;align-items:center;justify-content:space-between}
+    .logs-body{height:120px;overflow:auto;padding:10px;background:#0b1220;color:#e6f3ff;font-family:monospace;font-size:13px}
+    .collapsed .logs-body{height:28px;overflow:hidden}
+    .checkout-box{display:flex;gap:8px;align-items:center}
+    .preview{border:1px dashed #d0d7e6;padding:10px;border-radius:6px;background:#fcfeff;margin-top:10px}
+    .meta{display:flex;gap:12px;align-items:center;margin-top:8px}
+    .note{font-size:12px;color:#666}
   </style>
 </head>
 <body>
-  <h1>(Merchant) API Tester</h1>
-
-  <section>
-    <h2>Credentials & API</h2>
-    <label>Authorization (Bearer)</label>
-    <input id="authorization" type="text" placeholder="Bearer ...">
+  <div class="container">
+    <h1>Madfu API Tester</h1>
 
     <div class="row">
-      <div class="col">
-        <label>AppCode</label>
-        <input id="appCode" type="text" placeholder="AppCode">
+      <div>
+        <label for="apiUrl">API URL</label>
+        <input id="apiUrl" type="text" placeholder="https://api.example.com/endpoint">
+
+        <label for="method">HTTP Method</label>
+        <select id="method">
+          <option>POST</option>
+          <option>GET</option>
+          <option>PUT</option>
+          <option>DELETE</option>
+        </select>
+
+        <label for="checkout">Checkout Link</label>
+        <div class="checkout-box">
+          <input id="checkout" type="text" placeholder="https://checkout.example.com/abc" />
+        </div>
+
+        <label for="messageTemplate">Message Body Template (placeholders like {{AdminUser}}, {{AdminPassword}}, {{CheckoutLink}}, {{Reference}}, {{Message}})</label>
+        <textarea id="messageTemplate" rows="8">Dear Customer,
+
+Your admin username is {{AdminUser}} and password is {{AdminPassword}}.
+You can checkout here: {{CheckoutLink}}
+
+Reference: {{Reference}}
+
+Message:
+{{Message}}
+
+Regards,
+Support Team</textarea>
       </div>
-      <div class="col">
-        <label>APIKey</label>
-        <input id="apiKey" type="text" placeholder="APIKey">
+
+      <div>
+        <label>Credentials (highlighted Admin credentials)</label>
+        <div class="credentials">
+          <div style="flex:1">
+            <input id="adminUser" type="text" class="highlight" placeholder="AdminUser">
+            <div class="field-note small">Highlighted AdminUser field</div>
+          </div>
+          <div style="flex:1">
+            <input id="adminPassword" type="password" class="highlight" placeholder="AdminPassword">
+            <div class="field-note small">Highlighted AdminPassword field</div>
+          </div>
+        </div>
+
+        <label for="reference">Reference</label>
+        <input id="reference" type="text" placeholder="Ref12345">
+
+        <label for="body">Message Body</label>
+        <textarea id="body" rows="8" placeholder="A short message body to include in the document">Hello, your request was completed successfully.</textarea>
+
+        <div class="meta">
+          <div class="note">After a successful run the "Generate Document" button will enable and the preview will show the filled template.</div>
+        </div>
+
+        <div class="buttons">
+          <button id="runBtn">Run</button>
+          <button id="previewBtn" class="secondary">Update Preview</button>
+          <button id="generateBtn" disabled>Generate Document</button>
+        </div>
+
+        <div id="preview" class="preview" aria-live="polite">Preview will appear here after updating or after a successful run.</div>
       </div>
     </div>
 
-    <div class="row">
-      <div class="col">
-        <label>AdminUser</label>
-        <input id="adminUser" type="text" placeholder="Admin user">
+    <div id="logs" class="logs collapsed" style="margin-top:14px">
+      <div class="logs-header">
+        <div style="display:flex;gap:8px;align-items:center">
+          <strong>Logs</strong>
+          <span class="field-note">(minimized)</span>
+        </div>
+        <div>
+          <button id="toggleLogs" class="secondary" style="background:#fff;border:1px solid #d9dce6;color:#123">Expand</button>
+        </div>
       </div>
-      <div class="col">
-        <label>AdminPassword</label>
-        <input id="adminPassword" type="password" placeholder="Admin password">
-      </div>
+      <div id="logsBody" class="logs-body">Logs will appear here.</div>
     </div>
 
-    <div class="row">
-      <div class="col">
-        <label>CreateOrder Username</label>
-        <input id="username" type="text" placeholder="Username for CreateOrder">
-      </div>
-      <div class="col">
-        <label>CreateOrder Password</label>
-        <input id="password" type="password" placeholder="Password for CreateOrder">
-      </div>
-    </div>
+  </div>
 
-  </section>
+<script>
+  const runBtn = document.getElementById('runBtn');
+  const previewBtn = document.getElementById('previewBtn');
+  const generateBtn = document.getElementById('generateBtn');
+  const logs = document.getElementById('logs');
+  const logsBody = document.getElementById('logsBody');
+  const toggleLogs = document.getElementById('toggleLogs');
 
-  <section>
-    <h2>Message Body</h2>
-    <label>Message Template / Body</label>
-    <textarea id="messageBody" placeholder="Enter the message body you want composed into the Word document. You can include placeholders if needed."></textarea>
+  let lastRunSuccess = false;
 
-    <div class="controls">
-      <button class="button" id="generateWord">Generate Word</button>
-      <button class="button" id="previewBtn">Preview</button>
-    </div>
+  function addLog(msg){
+    const time = new Date().toISOString().replace('T',' ').split('.')[0];
+    logsBody.textContent = `[${time}] ${msg}\n` + logsBody.textContent;
+  }
 
-    <label>Preview</label>
-    <textarea id="preview" readonly placeholder="Preview of composed message"></textarea>
-  </section>
-
-  <section>
-    <h2>Proxy & Requests</h2>
-    <label>Proxy URL (optional)</label>
-    <input id="proxyUrl" type="text" placeholder="https://your-proxy.example.com/proxy">
-
-    <div class="controls">
-      <button class="button" id="sendCreateOrder">Send CreateOrder</button>
-      <button class="button" id="sendProxy">Send via Proxy</button>
-    </div>
-
-    <p class="small">Checkout link: <a id="checkoutLink" href="#" target="_blank">Open Checkout</a></p>
-  </section>
-
-  <section>
-    <h2>Logs</h2>
-    <div id="logs"></div>
-  </section>
-
-  <script>
-    // Utility to append logs
-    function log(...args) {
-      const el = document.getElementById('logs');
-      const line = args.map(a => (typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a))).join(' ');
-      el.textContent = line + '\n' + el.textContent;
+  toggleLogs.addEventListener('click', ()=>{
+    if(logs.classList.contains('collapsed')){
+      logs.classList.remove('collapsed');
+      toggleLogs.textContent = 'Collapse';
+    } else {
+      logs.classList.add('collapsed');
+      toggleLogs.textContent = 'Expand';
     }
+  });
 
-    // Compose the message body using inputs from the page
-    function composeMessage() {
-      const auth = document.getElementById('authorization').value || '';
-      const appCode = document.getElementById('appCode').value || '';
-      const apiKey = document.getElementById('apiKey').value || '';
-      const adminUser = document.getElementById('adminUser').value || '';
-      const adminPassword = document.getElementById('adminPassword').value || '';
-      const username = document.getElementById('username').value || '';
-      const password = document.getElementById('password').value || '';
-      const body = document.getElementById('messageBody').value || '';
+  function replacePlaceholders(template, data){
+    return template.replace(/{{\s*([A-Za-z0-9_]+)\s*}}/g, (m, key)=>{
+      return data[key] !== undefined ? data[key] : m;
+    });
+  }
 
-      // Compose a human readable message. Adjust formatting as needed.
-      const lines = [];
-      lines.push('Authorization: ' + auth);
-      lines.push('AppCode: ' + appCode);
-      lines.push('APIKey: ' + apiKey);
-      lines.push('AdminUser: ' + adminUser);
-      lines.push('AdminPassword: ' + adminPassword);
-      lines.push('CreateOrder Username: ' + username);
-      lines.push('CreateOrder Password: ' + password);
-      lines.push('');
-      lines.push('--- Message Body ---');
-      lines.push(body);
+  function updatePreview(){
+    const template = document.getElementById('messageTemplate').value;
+    const data = {
+      AdminUser: document.getElementById('adminUser').value || '',
+      AdminPassword: document.getElementById('adminPassword').value || '',
+      CheckoutLink: document.getElementById('checkout').value || '',
+      Reference: document.getElementById('reference').value || '',
+      Message: document.getElementById('body').value || ''
+    };
+    const html = replacePlaceholders(template, data).replace(/\n/g, '<br>');
+    document.getElementById('preview').innerHTML = html;
+    addLog('Preview updated');
+  }
 
-      return lines.join('\n');
+  previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); updatePreview(); });
+
+  runBtn.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    const url = document.getElementById('apiUrl').value.trim();
+    if(!url){ addLog('No API URL provided'); alert('Please provide API URL'); return; }
+    const method = document.getElementById('method').value || 'POST';
+    const bodyText = document.getElementById('body').value || '';
+
+    addLog(`Starting ${method} ${url}`);
+    try{
+      const headers = {'Content-Type':'application/json'};
+      const user = document.getElementById('adminUser').value;
+      const pass = document.getElementById('adminPassword').value;
+      if(user && pass){
+        headers['Authorization'] = 'Basic ' + btoa(user + ':' + pass);
+      }
+      const fetchOptions = {method, headers};
+      if(method !== 'GET' && method !== 'DELETE'){
+        try{ fetchOptions.body = JSON.stringify({message: bodyText, reference: document.getElementById('reference').value || ''}); }catch(err){ fetchOptions.body = bodyText; }
+      }
+      const resp = await fetch(url, fetchOptions);
+      const text = await resp.text();
+      addLog(`HTTP ${resp.status} ${resp.statusText}`);
+      if(resp.ok){
+        lastRunSuccess = true;
+        generateBtn.disabled = false;
+        addLog('Run successful — Generate Document enabled');
+      } else {
+        lastRunSuccess = false;
+        generateBtn.disabled = true;
+        addLog('Run failed — Generate Document disabled');
+      }
+      // Put abbreviated log into the visible area
+      logsBody.textContent = text.slice(0, 400) + (text.length>400? '\n... (truncated)':'' ) + '\n\n' + logsBody.textContent;
+      updatePreview();
+    }catch(err){
+      addLog('Error: ' + err.message);
+      lastRunSuccess = false;
+      generateBtn.disabled = true;
+      alert('Request failed: '+err.message);
     }
+  });
 
-    // Preview button
-    document.getElementById('previewBtn').addEventListener('click', () => {
-      const previewText = composeMessage();
-      document.getElementById('preview').value = previewText;
-      log('Preview generated');
-    });
+  function generateDocument(){
+    if(!lastRunSuccess){ alert('Document generation is only allowed after a successful run.'); return; }
+    const template = document.getElementById('messageTemplate').value;
+    const data = {
+      AdminUser: document.getElementById('adminUser').value || '',
+      AdminPassword: document.getElementById('adminPassword').value || '',
+      CheckoutLink: document.getElementById('checkout').value || '',
+      Reference: document.getElementById('reference').value || '',
+      Message: document.getElementById('body').value || ''
+    };
+    let filled = replacePlaceholders(template, data);
 
-    // Generate Word document (.doc) and download
-    document.getElementById('generateWord').addEventListener('click', () => {
-      const docText = composeMessage();
-      // Populate preview as well
-      document.getElementById('preview').value = docText;
+    // Build an HTML document that Word can open. Using .doc with HTML content is widely supported.
+    const docHtml = `<!doctype html><html><head><meta charset="utf-8"><title>Document</title></head><body>${filled.replace(/\n/g,'<br>')}</body></html>`;
+    const blob = new Blob([docHtml], {type: 'application/msword'});
+    const url = URL.createObjectURL(blob);
 
-      // Create a blob and trigger download as .doc
-      const blob = new Blob([docText], { type: 'application/msword' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const filename = 'message_' + (new Date()).toISOString().replace(/[:.]/g,'-') + '.doc';
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      log('Generated Word document:', filename);
-    });
+    // Create a download link
+    const a = document.createElement('a');
+    a.href = url;
+    const safeRef = (data.Reference || 'document').replace(/[^a-z0-9-_]/ig,'_');
+    a.download = `${safeRef || 'document'}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    addLog('Document generated and download started');
+  }
 
-    // Example: send CreateOrder request. Adjust endpoint and payload as needed by your API.
-    document.getElementById('sendCreateOrder').addEventListener('click', async () => {
-      const endpoint = '/createOrder'; // placeholder - change to real endpoint if needed
-      const auth = document.getElementById('authorization').value;
-      const appCode = document.getElementById('appCode').value;
-      const apiKey = document.getElementById('apiKey').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+  generateBtn.addEventListener('click', (e)=>{ e.preventDefault(); generateDocument(); });
 
-      const payload = {
-        username,
-        password,
-        metadata: { appCode, apiKey }
-      };
-
-      log('Sending CreateOrder to', endpoint, 'payload:', payload);
-
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': auth || ''
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await res.text();
-        log('CreateOrder response:', res.status, text);
-      } catch (err) {
-        log('CreateOrder error:', err);
-      }
-    });
-
-    // Send via proxy: forwards a request to the proxy URL provided
-    document.getElementById('sendProxy').addEventListener('click', async () => {
-      const proxyUrl = document.getElementById('proxyUrl').value;
-      if (!proxyUrl) {
-        log('Proxy URL is empty');
-        return;
-      }
-
-      const targetPath = '/some/api/path'; // placeholder
-      const fullUrl = proxyUrl.replace(/\/$/, '') + targetPath;
-      const auth = document.getElementById('authorization').value;
-
-      log('Sending proxy request to', fullUrl);
-
-      try {
-        const res = await fetch(fullUrl, {
-          method: 'GET',
-          headers: { 'Authorization': auth || '' }
-        });
-        const text = await res.text();
-        log('Proxy response:', res.status, text);
-      } catch (err) {
-        log('Proxy error:', err);
-      }
-    });
-
-    // Set checkout link behavior (keeps existing functionality: an openable link)
-    const checkoutLink = document.getElementById('checkoutLink');
-    checkoutLink.href = '#';
-    checkoutLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      const checkoutUrl = '/checkout'; // placeholder - adjust to real checkout
-      window.open(checkoutUrl, '_blank');
-      log('Checkout link opened:', checkoutUrl);
-    });
-
-    // Initial log
-    log('API Tester loaded. (Merchant)');
-  </script>
+  // Initialize preview from defaults
+  updatePreview();
+</script>
 </body>
 </html>
