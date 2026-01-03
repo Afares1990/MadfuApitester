@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fly Nas — API Flow Tester (v3.1)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root { color-scheme: light dark; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 18px; background:#f0f4f8; color:#0b1720; }
@@ -38,6 +39,9 @@
     .container-header { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:8px; }
     .title-wrap { display:block; }
   </style>
+
+  <!-- docx UMD (browser) for .docx generation -->
+  <script src="https://unpkg.com/docx@9.0.2/build/index.umd.js"></script>
 </head>
 <body>
   <div class="container">
@@ -120,12 +124,22 @@
 
       <div class="row" style="margin-top:10px;">
         <div>
+          <label>Merchant Name (used for exported filename)</label>
+          <input id="merchantName" placeholder="Merchant name (e.g. Roastery)" />
+        </div>
+        <div>
           <label>Dashboard name</label>
           <input id="dashboardName" value="Madfu Vendor Dashboard" />
         </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
         <div>
           <label for="otp">OTP (test)</label>
           <input id="otp" value="1001" />
+        </div>
+        <div>
+          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a></label>
         </div>
       </div>
     </div>
@@ -145,7 +159,7 @@
       </div>
     </div>
 
-    <!-- Order payload -->
+    <!-- Order payload (unchanged) -->
     <div class="card">
       <h2>Order Payload</h2>
 
@@ -227,16 +241,16 @@
 
     <!-- Document generation -->
     <div class="card">
-      <h2>Generate Merchant Document (.doc)</h2>
-      <p class="small">The document uses the exact message body you provided and replaces these values: AUTHORIZATION, APPCODE, APIKEY, Admin USER, PASSWORD, USERNAME, Username PASSWORD.</p>
+      <h2>Generate Merchant Document (.doc / .docx)</h2>
+      <p class="small">The document contains credentials in a colored table and links to the Dashboard and API docs.</p>
 
       <label for="messagePreview">Preview (editable before download)</label>
       <textarea id="messagePreview" placeholder="Preview will appear here"></textarea>
 
       <div class="generate-row">
-        <button id="generateDocBtn" class="btn secondary disabled" disabled>Preview & Generate Word</button>
+        <button id="generateDocBtn" class="btn secondary disabled" disabled>Preview & Generate Word (.docx)</button>
         <button id="previewBtn" class="btn ghost">Preview only</button>
-        <div class="small" style="margin-left:8px">File will contain the provided message text with placeholders replaced by the form values.</div>
+        <div class="small" style="margin-left:8px">DOCX is primary; a .doc fallback is kept for compatibility.</div>
       </div>
     </div>
 
@@ -244,6 +258,10 @@
 
 <script>
 (function(){
+  // docx alias (UMD)
+  const docxLib = window.docx || null;
+  const { Document, Paragraph, Table, TableRow, TableCell, Packer, TextRun, HeadingLevel, WidthType, ShadingType, ExternalHyperlink } = docxLib || {};
+
   // UI refs
   const logEl = document.getElementById('log');
   const logContainer = document.getElementById('logContainer');
@@ -258,9 +276,9 @@
   let logsVisible = false;
   let lastFlowSuccess = false;
 
-  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; logEl.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n\n` + logEl.textContent; }catch(e){} }
+  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n\n` + el.textContent; }catch(e){} }
 
-  toggleLogsBtn.addEventListener('click', () => {
+  toggleLogsBtn?.addEventListener('click', () => {
     logsVisible = !logsVisible;
     document.getElementById('logContainer').style.display = logsVisible ? 'block' : 'none';
     toggleLogsBtn.textContent = logsVisible ? 'Hide logs' : 'Show logs';
@@ -354,7 +372,7 @@
 `- DASHBOARD:  ${dashboardName}`,
 `  Admin USER: ${adminUser}  (use to login into Dashboard)`,
 `  PASSWORD: ${adminPassword}`,
-`- OTP: ${otp}\t`,
+`- OTP: ${otp}	`,
 `- Creating Order User: (use in creating order at Sign In API Body)`,
 `  USERNAME : ${createUser}`,
 `  PASSWORD: ${createPass}`,
@@ -377,7 +395,7 @@
     return lines.join("\n");
   }
 
-  // download .doc
+  // DOC fallback (same as previous)
   function downloadDoc(filename, text) {
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap;">${escapeHtml(text)}</pre></body></html>`;
     const blob = new Blob([html], { type: 'application/msword' });
@@ -391,15 +409,115 @@
   }
   function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  // DOCX generation using docx library
+  async function generateDocxFile(filename, creds) {
+    if (!docxLib) {
+      // fallback to DOC if docx lib not available
+      downloadDoc(filename.replace(/\.docx$/i, '.doc'), composeMessage());
+      return;
+    }
+
+    // Table rows: label, value
+    const rows = [];
+    function cell(text, opts = {}) {
+      const shading = opts.shade ? { type: ShadingType.CLEAR, fill: opts.fill || 'EAF3FF', color: 'auto' } : undefined;
+      return new TableCell({
+        shading,
+        children: [ new Paragraph(text) ],
+      });
+    }
+
+    // Build credential rows (colored labels on left)
+    const tableRows = [
+      new TableRow({ children: [ cell('AUTHORIZATION', {shade:true, fill:'E6F0FF'}), cell(creds.authorization) ] }),
+      new TableRow({ children: [ cell('APPCODE', {shade:true, fill:'E6F0FF'}), cell(creds.appCode) ] }),
+      new TableRow({ children: [ cell('APIKEY', {shade:true, fill:'E6F0FF'}), cell(creds.apiKey) ] }),
+      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill:'FFF1E6'}), new TableCell({ children: [ new Paragraph({ children: [ new ExternalHyperlink({ children: [ new Paragraph('Madfu Vendor Dashboard') ], link: 'https://vendor-staging-new.madfu.com.sa/login' }) ] }) ] }) ] }),
+      new TableRow({ children: [ cell('Admin USER', {shade:true, fill:'FFF1E6'}), cell(creds.adminUser) ] }),
+      new TableRow({ children: [ cell('Admin PASSWORD', {shade:true, fill:'FFF1E6'}), cell(creds.adminPassword) ] }),
+      new TableRow({ children: [ cell('OTP', {shade:true, fill:'F0FFF0'}), cell(creds.otp) ] }),
+      new TableRow({ children: [ cell('Creating Order USERNAME', {shade:true, fill:'F0FFF0'}), cell(creds.createUser) ] }),
+      new TableRow({ children: [ cell('Creating Order PASSWORD', {shade:true, fill:'F0FFF0'}), cell(creds.createPass) ] }),
+      new TableRow({ children: [ cell('API Docs', {shade:true, fill:'FFF1E6'}), new TableCell({ children: [ new Paragraph({ children: [ new ExternalHyperlink({ children: [ new Paragraph('Madfu API Integration Documentation') ], link: 'https://madfuapis.readme.io/reference/inittoken' }) ] }) ] }) ] })
+    ];
+
+    const table = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: tableRows
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ text: creds.headerTitle || 'Madfu Integration — Credentials', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 200 } }),
+          table,
+          new Paragraph({ text: '', spacing: { after: 200 } }),
+          new Paragraph({ text: 'General Notes:', heading: HeadingLevel.HEADING_3 }),
+          new Paragraph('For Testing Orders, please use the following Credit Card details:'),
+          new Paragraph('Visa: 4111 1111 1111 1111  CVV: 123  Expiry: 05/25  Name: test'),
+          new Paragraph(`PlatformTypeId: ${creds.platformTypeId}`),
+          new Paragraph({ text: '', spacing: { before: 200 } }),
+          new Paragraph('Best regards,'),
+          new Paragraph('Ahmed AbdelMaksoud'),
+          new Paragraph('Madfu Integration Team')
+        ]
+      }]
+    });
+
+    // pack and download
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
+
   // preview-only button
   previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); messagePreview.value = composeMessage(); log('Preview generated'); });
 
   // generate button (enabled after success)
-  generateDocBtn.addEventListener('click', (e)=>{ e.preventDefault(); if(!lastFlowSuccess){ alert('Generate is enabled only after a successful run.'); return; } const text = messagePreview.value && messagePreview.value.trim() ? messagePreview.value : composeMessage(); downloadDoc('Madfu_Integration_Credentials.doc', text); log('Document generated'); });
+  generateDocBtn.addEventListener('click', async (e)=>{ 
+    e.preventDefault(); 
+    if(!lastFlowSuccess){ alert('Generate is enabled only after a successful run.'); return; } 
+    const merchant = (document.getElementById('merchantName')?.value || 'Merchant').replace(/[^a-z0-9-_ ]/ig,'').replace(/\s+/g,'_');
+    const ts = new Date().toISOString().replace(/[:-]/g,'').replace(/\..+$/,'');
+    const filenameDocx = `${merchant}_Madfu_Credentials_${ts}.docx`;
+    const filenameDoc = `${merchant}_Madfu_Credentials_${ts}.doc`;
+    const creds = {
+      authorization: document.getElementById('basicAuth').value.trim() || '—',
+      appCode: document.getElementById('appCode').value.trim() || '—',
+      apiKey: document.getElementById('apiKey').value.trim() || '—',
+      adminUser: document.getElementById('adminUser').value.trim() || '—',
+      adminPassword: document.getElementById('adminPassword').value || '—',
+      otp: document.getElementById('otp').value.trim() || '1001',
+      createUser: document.getElementById('username').value.trim() || '—',
+      createPass: document.getElementById('password').value || '—',
+      headerTitle: `Madfu Integration — Credentials (${merchant})`,
+      platformTypeId: document.getElementById('platformTypeId').value.trim() || '5'
+    };
+
+    // Fill preview from the composed message if empty
+    messagePreview.value = messagePreview.value && messagePreview.value.trim() ? messagePreview.value : composeMessage();
+
+    // Try to generate docx; if docx lib not available or it fails, fallback to .doc
+    try {
+      await generateDocxFile(filenameDocx, creds);
+      log('DOCX generated: ' + filenameDocx);
+    } catch (err) {
+      console.warn('DOCX generation failed, falling back to .doc', err);
+      downloadDoc(filenameDoc, messagePreview.value || composeMessage());
+      log('DOC fallback generated: ' + filenameDoc);
+    }
+  });
 
   // run flow
   runBtn.addEventListener('click', async () => {
-    logEl.textContent = '';
+    logEl && (document.getElementById('log').textContent = ''); // clear logs
     successBox.style.display = 'none';
     generateDocBtn.disabled = true;
     generateDocBtn.classList.add('disabled');
