@@ -2,308 +2,646 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <title>Fly Nas — API Flow Tester (v3.1)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Madfu API Tester</title>
   <style>
-    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    body{margin:0;padding:20px;background:#f4f7fb;color:#0b0b0b}
-    .container{max-width:1100px;margin:0 auto}
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .badge{background:#0b66c2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:600}
-
-    .panel{background:#fff;border-radius:8px;padding:18px;box-shadow:0 2px 8px rgba(20,20,40,0.06);margin-bottom:18px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    label{display:block;font-size:13px;margin-bottom:6px}
-    input[type=text],textarea,select{width:100%;padding:10px;border:1px solid #d7dee9;border-radius:6px;font-size:14px}
-    textarea{min-height:120px;resize:vertical}
-    .col{flex:1;min-width:220px}
-    .actions{display:flex;gap:10px;align-items:center;margin-top:8px}
-    button{background:#0b66c2;color:#fff;padding:10px 14px;border:none;border-radius:6px;cursor:pointer}
-    button.secondary{background:#eef3fb;color:#0b66c2;border:1px solid #cfe0fb}
-    .response{white-space:pre-wrap;background:#071326;color:#bfe1ff;padding:12px;border-radius:6px;min-height:120px;overflow:auto}
-
-    /* Credit card block */
-    .card-block{border:1px dashed #cfe0fb;padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff 0%,#f7fbff 100%)}
-    .card-row{display:flex;gap:8px}
-    .small{font-size:13px}
-
-    /* Doc generation preview table */
-    .preview-table{width:100%;border-collapse:collapse;margin-top:12px}
-    .preview-table th,.preview-table td{padding:8px;border:1px solid #dbeaf8}
-    .preview-table thead{background:#e6f0ff}
-
-    footer{margin-top:12px;font-size:12px;color:#6b7280}
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin: 18px; background:#f0f4f8; color:#0b1720; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size:28px; margin:0 0 6px; text-align:left; }
+    .subtitle { color:#6b7280; margin:0 0 18px; }
+    .card { background:#fff; border-radius:10px; padding:18px; box-shadow:0 4px 12px rgba(12,15,20,0.04); margin-bottom:18px; border:1px solid #e6eef8; }
+    label { display:block; font-weight:700; margin-top:10px; color:#0b2b4a; }
+    input, select, textarea, button { font-family:inherit; font-size:14px; }
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
+      width:100%; padding:10px; margin-top:6px; box-sizing:border-box; border-radius:6px; border:1px solid #dbe7f7; background:#fbfdff;
+    }
+    textarea { min-height:120px; resize:vertical; padding:12px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:14px; align-items:start; }
+    .single { grid-column: 1 / -1; }
+    .cred { border:2px solid #0b84ff; background:linear-gradient(180deg,#f0f8ff,#ffffff); padding:12px; border-radius:8px; }
+    .cred label { color:#054ea6; margin-top:0; }
+    .cred input { background:transparent; border:1px solid #cfe9ff; padding:8px; border-radius:6px; margin-top:8px; }
+    .muted { color:#6b7280; font-size:13px; margin-top:6px; }
+    .controls { display:flex; gap:8px; margin-top:12px; align-items:center; }
+    .btn { padding:10px 14px; border-radius:8px; border:0; background:#0b84ff; color:#fff; cursor:pointer; font-weight:700; }
+    .btn.ghost { background:transparent; border:1px solid #cfe9ff; color:#0b84ff; }
+    .btn.secondary { background:#6b7280; color:#fff; }
+    .log-mini { font-size:13px; color:#374151; background:#fbfdff; padding:8px; border-radius:8px; border:1px solid #e6eef8; }
+    .success-box { display:none; background:#f0fff3; border:1px solid #b7f2c6; color:#065a2b; padding:12px; border-radius:8px; margin-top:12px; }
+    .success-box a { color:#064e3b; font-weight:700; text-decoration:underline; }
+    .log { white-space:pre-wrap; background:#0f1724; color:#cfe8ff; padding:12px; border-radius:8px; max-height:360px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #0b1220; }
+    .log-collapsed { display:none; }
+    .generate-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    .disabled { opacity:0.5; pointer-events:none; }
+    .small { font-size:13px; color:#475569; }
+    .container-header { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:8px; }
+    .title-wrap { display:block; }
   </style>
+
+  <!-- docx UMD (browser) for .docx generation -->
+  <script src="https://unpkg.com/docx@9.0.2/build/index.umd.js"></script>
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Madfu API Tester</h1>
-      <div class="badge">Tester UI Restored</div>
-    </header>
+    <div class="container-header">
+      <div class="title-wrap">
+        <h1>Fly Nas — API Flow Tester (v3.1)</h1>
+        <p class="subtitle">Flow: 1) Initialize Token → 2) Sign-in → 3) CreateOrder | PlatformTypeId default 5</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="previewOnly" class="btn ghost">Preview only</button>
+        <button id="previewGenerate" class="btn secondary disabled" disabled>Preview & Generate Word</button>
+      </div>
+    </div>
 
-    <section class="panel">
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <div style="flex:1;min-width:260px">
-          <label for="endpoint">Endpoint (URL)</label>
-          <input id="endpoint" type="text" placeholder="https://api.example.com/path" />
-        </div>
-
-        <div style="width:140px">
-          <label for="method">Method</label>
-          <select id="method">
-            <option>GET</option>
-            <option>POST</option>
-            <option>PUT</option>
-            <option>PATCH</option>
-            <option>DELETE</option>
-            <option>OPTIONS</option>
+    <!-- Environment -->
+    <div class="card">
+      <h2>Environment</h2>
+      <div class="row">
+        <div>
+          <label>Base URL</label>
+          <select id="baseUrl">
+            <option value="https://api.staging.madfu.com.sa">Staging</option>
+            <option value="https://api.madfu.com.sa">Production</option>
           </select>
         </div>
-
-        <div style="width:180px">
-          <label for="contentType">Content-Type</label>
-          <select id="contentType">
-            <option>application/json</option>
-            <option>application/x-www-form-urlencoded</option>
-            <option>multipart/form-data</option>
-            <option>text/plain</option>
-          </select>
+        <div>
+          <label>Proxy URL (optional)</label>
+          <input id="proxyUrl" value="/api/proxy" placeholder="Use /api/proxy after deploying to Vercel (or full https://your-app.vercel.app/api/proxy)" />
         </div>
       </div>
 
-      <div style="margin-top:12px">
-        <label for="headers">Headers (one per line, Key: Value)</label>
-        <textarea id="headers" placeholder="Authorization: Bearer &lt;token&gt;\nX-Custom: value"></textarea>
-      </div>
-
-      <div style="margin-top:12px">
-        <label for="body">Body</label>
-        <textarea id="body" placeholder='{"name":"value"}'></textarea>
-      </div>
-
-      <div class="actions">
-        <button id="send">Send Request</button>
-        <button id="pretty" class="secondary">Pretty JSON</button>
-        <button id="copy" class="secondary">Copy Response</button>
-
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <button id="generateDoc" class="secondary">Generate Doc</button>
-          <button id="downloadLog" class="secondary">Download Response</button>
+      <h3 style="margin-top:12px">Headers (required by API)</h3>
+      <div class="row">
+        <div class="cred">
+          <label for="apiKey">APIKey</label>
+          <input id="apiKey" placeholder="enter APIKey" autocomplete="off" />
+        </div>
+        <div class="cred">
+          <label for="appCode">AppCode</label>
+          <input id="appCode" placeholder="enter AppCode" autocomplete="off" />
         </div>
       </div>
 
-    </section>
-
-    <section class="panel">
-      <h3 style="margin:0 0 10px 0">Response</h3>
-      <div id="response" class="response">No response yet.</div>
-    </section>
-
-    <section class="panel">
-      <h3 style="margin:0 0 10px 0">Credit Card Block</h3>
-      <div class="card-block">
-        <div class="row">
-          <div class="col">
-            <label class="small">Cardholder Name</label>
-            <input id="cc_name" type="text" placeholder="Jane Doe" />
-          </div>
-          <div style="width:160px">
-            <label class="small">Card Number</label>
-            <input id="cc_number" type="text" placeholder="4242 4242 4242 4242" />
-          </div>
-          <div style="width:100px">
-            <label class="small">Expiry</label>
-            <input id="cc_expiry" type="text" placeholder="MM/YY" />
-          </div>
-          <div style="width:80px">
-            <label class="small">CVC</label>
-            <input id="cc_cvc" type="text" placeholder="123" />
-          </div>
+      <div class="row" style="margin-top:10px;">
+        <div class="cred">
+          <label for="basicAuth">Authorization (Basic …)</label>
+          <input id="basicAuth" placeholder="Basic xxxxxx (or only base64 — we will prefix)" autocomplete="off" />
+        </div>
+        <div>
+          <label for="platformTypeId">PlatformTypeId</label>
+          <input id="platformTypeId" value="5" />
         </div>
       </div>
 
-      <div style="margin-top:12px">
-        <label class="small">Preview (for documentation)</label>
-        <table class="preview-table">
-          <thead>
-            <tr><th>Field</th><th>Value</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Cardholder</td><td id="p_name">-</td></tr>
-            <tr><td>Number</td><td id="p_number">-</td></tr>
-            <tr><td>Expiry</td><td id="p_expiry">-</td></tr>
-          </tbody>
-        </table>
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>System Info</label>
+          <input id="systemInfo" value="web" />
+        </div>
+        <div>
+          <label>UUID (auto)</label>
+          <input id="runUuid" placeholder="auto-generated" />
+        </div>
       </div>
-    </section>
+    </div>
 
-    <footer>Madfu API Tester — Api documentation Guide included in generated doc</footer>
+    <!-- Headers & Admin (keeping highlights) -->
+    <div class="card">
+      <h2>Admin & Dashboard</h2>
+      <div class="row">
+        <div class="cred">
+          <label for="adminUser">AdminUser (Dashboard)</label>
+          <input id="adminUser" placeholder="Admin@merchant.com" />
+        </div>
+        <div class="cred">
+          <label for="adminPassword">Admin Password (Dashboard)</label>
+          <input id="adminPassword" placeholder="Dashboard password" type="password" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Merchant Name (used for exported filename)</label>
+          <input id="merchantName" placeholder="Merchant name (e.g. Roastery)" />
+        </div>
+        <div>
+          <label>Dashboard name</label>
+          <input id="dashboardName" value="Madfu Vendor Dashboard" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label for="otp">OTP (test)</label>
+          <input id="otp" value="1001" />
+        </div>
+        <div>
+          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign-in -->
+    <div class="card">
+      <h2>Sign-in</h2>
+      <div class="row">
+        <div class="cred">
+          <label for="username">Username</label>
+          <input id="username" placeholder="Cashier@Roastery.sa" autocomplete="off" />
+        </div>
+        <div class="cred">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Order payload (unchanged) -->
+    <div class="card">
+      <h2>Order Payload</h2>
+
+      <div class="row">
+        <div>
+          <label>Taxes</label>
+          <input id="taxes" type="number" value="0" />
+        </div>
+        <div>
+          <label>ActualValue</label>
+          <input id="actualValue" type="number" value="500" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Amount</label>
+          <input id="amount" type="number" value="500" />
+        </div>
+        <div>
+          <label>MerchantReference (auto)</label>
+          <input id="merchantRef" placeholder="auto-generated" />
+        </div>
+      </div>
+
+      <h3 style="margin-top:12px">OrderDetails (single item)</h3>
+      <div class="row">
+        <div><label>Product Name</label><input id="productName" value="coffee" /></div>
+        <div><label>SKU</label><input id="sku" value="1" /></div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div><label>Product Image</label><input id="productImage" value="test" /></div>
+        <div><label>Count</label><input id="count" type="number" value="1" /></div>
+      </div>
+
+      <label style="margin-top:10px">Total Amount</label>
+      <input id="totalAmount" type="number" value="500" />
+
+      <h3 style="margin-top:12px">Guest</h3>
+      <div class="row">
+        <div><label>Lang</label><input id="lang" value="en" /></div>
+        <div><label>Customer Name</label><input id="customerName" value="Ahmed" /></div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div><label>Customer Mobile</label><input id="customerMobile" value="501110002" /></div>
+        <div><label>Shipping Address</label><input id="shippingAddress" value="kingfahd" /></div>
+      </div>
+
+      <h3 style="margin-top:12px">Merchant URLs</h3>
+      <div class="row">
+        <div><label>Success</label><input id="successUrl" value="https://example.com/#/Success" /></div>
+        <div><label>Failure</label><input id="failureUrl" value="https://example.com/#/Failure" /></div>
+      </div>
+      <label style="margin-top:10px">Cancel</label>
+      <input id="cancelUrl" value="https://example.com/#/Cancel" />
+    </div>
+
+    <!-- Run & Logs -->
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button id="runBtn" class="btn">Run Test ▶</button>
+        <div class="small">After success, a checkout link appears and the Generate Document button will enable.</div>
+      </div>
+
+      <div id="successBox" class="success-box" role="status" aria-live="polite">
+        <div><strong>Flow succeeded</strong></div>
+        <div style="margin-top:8px">Checkout link: <a id="openCheckout" href="#" target="_blank" rel="noopener">(open)</a></div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="log-mini">Logs are minimized by default — click to expand when needed.</div>
+        <button id="toggleLogsBtn" class="btn ghost" style="margin-top:8px; margin-left:auto;">Show logs</button>
+      </div>
+
+      <div id="logContainer" style="margin-top:12px; display:none;">
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <!-- Document generation -->
+    <div class="card">
+      <h2>Generate Merchant Document (.doc / .docx)</h2>
+      <p class="small">The document contains credentials in a colored table and links to the Dashboard and API docs.</p>
+
+      <label for="messagePreview">Preview (editable before download)</label>
+      <textarea id="messagePreview" placeholder="Preview will appear here"></textarea>
+
+      <div class="generate-row">
+        <button id="generateDocBtn" class="btn secondary disabled" disabled>Preview & Generate Word (.docx)</button>
+        <button id="previewBtn" class="btn ghost">Preview only</button>
+        <div class="small" style="margin-left:8px">DOCX is primary; a .doc fallback is kept for compatibility.</div>
+      </div>
+    </div>
+
   </div>
 
-  <script>
-    const endpointEl = document.getElementById('endpoint');
-    const methodEl = document.getElementById('method');
-    const headersEl = document.getElementById('headers');
-    const bodyEl = document.getElementById('body');
-    const responseEl = document.getElementById('response');
+<script>
+(function(){
+  // docx alias (UMD)
+  const docxLib = window.docx || null;
+  const { Document, Paragraph, Table, TableRow, TableCell, Packer, TextRun, HeadingLevel, WidthType, ShadingType, ExternalHyperlink } = docxLib || {};
 
-    const ccName = document.getElementById('cc_name');
-    const ccNumber = document.getElementById('cc_number');
-    const ccExpiry = document.getElementById('cc_expiry');
-    const ccCvc = document.getElementById('cc_cvc');
+  // UI refs
+  const logEl = document.getElementById('log');
+  const logContainer = document.getElementById('logContainer');
+  const toggleLogsBtn = document.getElementById('toggleLogsBtn');
+  const successBox = document.getElementById('successBox');
+  const openCheckout = document.getElementById('openCheckout');
+  const runBtn = document.getElementById('runBtn');
+  const generateDocBtn = document.getElementById('generateDocBtn');
+  const previewBtn = document.getElementById('previewBtn');
+  const messagePreview = document.getElementById('messagePreview');
 
-    const pName = document.getElementById('p_name');
-    const pNumber = document.getElementById('p_number');
-    const pExpiry = document.getElementById('p_expiry');
+  let logsVisible = false;
+  let lastFlowSuccess = false;
 
-    function parseHeaders(text){
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      const result = {};
-      lines.forEach(line=>{
-        const idx = line.indexOf(':');
-        if(idx>-1){
-          const key = line.slice(0,idx).trim();
-          const val = line.slice(idx+1).trim();
-          result[key]=val;
-        }
+  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n\n` + el.textContent; }catch(e){} }
+
+  toggleLogsBtn?.addEventListener('click', () => {
+    logsVisible = !logsVisible;
+    document.getElementById('logContainer').style.display = logsVisible ? 'block' : 'none';
+    toggleLogsBtn.textContent = logsVisible ? 'Hide logs' : 'Show logs';
+  });
+
+  function buildHeaders(includeToken, token) {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const appCode = document.getElementById('appCode').value.trim();
+    let basicAuth = document.getElementById('basicAuth').value.trim();
+    if (basicAuth && !basicAuth.startsWith('Basic ')) basicAuth = 'Basic ' + basicAuth;
+    const platformTypeId = document.getElementById('platformTypeId').value.trim() || '5';
+    const headers = {
+      'accept': 'application/json',
+      'content-type': 'application/json',
+      'APIKey': apiKey,
+      'AppCode': appCode,
+      'Authorization': basicAuth,
+      'PlatformTypeId': platformTypeId
+    };
+    if (includeToken && token) headers['Token'] = token;
+    return headers;
+  }
+
+  async function doFetch(url, method, headers, body) {
+    const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const text = await res.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (e) {}
+    return { status: res.status, headers: Object.fromEntries(res.headers.entries()), json, raw: text };
+  }
+
+  function withProxy(targetUrl) {
+    const proxyBase = (document.getElementById('proxyUrl').value || '').trim();
+    if (!proxyBase) return { url: targetUrl, viaProxy: false };
+    return { url: `${proxyBase}?url=${encodeURIComponent(targetUrl)}`, viaProxy: true };
+  }
+
+  function findCheckoutLink(obj) {
+    if (!obj) return null;
+    const keys = ['checkoutLink','CheckoutLink','checkoutUrl','CheckoutUrl','paymentUrl','PaymentUrl','url','Url','payment_url','redirectUrl','redirect_url'];
+    const tryKeys = (o, keys) => keys.map(k => o && typeof o === 'object' ? o[k] : undefined).find(v=>v);
+    let found = tryKeys(obj, keys);
+    if (found) return found;
+    const nests = ['data','Data','result','Result','response','Response'];
+    for (const n of nests) {
+      if (obj[n]) {
+        found = tryKeys(obj[n], keys);
+        if (found) return found;
+      }
+    }
+    try {
+      const s = JSON.stringify(obj);
+      const m = s.match(/https?:\/\/[^"'}\\s]+/);
+      if (m) return m[0];
+    } catch(e){}
+    return null;
+  }
+
+  // compose message template exactly as supplied
+  function composeMessage() {
+    const authorization = document.getElementById('basicAuth').value.trim() || '—';
+    const appCode = document.getElementById('appCode').value.trim() || '—';
+    const apiKey = document.getElementById('apiKey').value.trim() || '—';
+    const adminUser = document.getElementById('adminUser').value.trim() || '—';
+    const adminPassword = document.getElementById('adminPassword').value || '—';
+    const dashboardName = document.getElementById('dashboardName').value.trim() || 'Madfu Vendor Dashboard';
+    const otp = document.getElementById('otp').value.trim() || '1001';
+    const createUser = document.getElementById('username').value.trim() || '—';
+    const createPass = document.getElementById('password').value || '—';
+
+    const lines = [
+"Dears ,",
+"",
+"                 I hope this email finds you well.",
+"",
+"I am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration. ",
+"Our goal is to ensure a seamless and efficient experience for you as you integrate our API into your systems.",
+"To assist you in this process, I would like to introduce you to our comprehensive documentation. ",
+"You can access the documentation for our API integration through the following link:",
+"",
+"Madfu API Integration Documentation ",
+"This documentation provides detailed information on how to initiate and utilize the API integration to its fullest potential, guiding you through each step of the process.",
+"Furthermore, ",
+"I am providing testing credentials to facilitate the testing of the integration. ",
+"These credentials will enable you to perform thorough testing and ensure that the integration meets your requirements and expectations:",
+"",
+`- AUTHORIZATION: ${authorization}`,
+`- APPCODE: ${appCode}`,
+`- APIKEY: ${apiKey}`,
+"",
+`- DASHBOARD:  ${dashboardName}`,
+`  Admin USER: ${adminUser}  (use to login into Dashboard)`,
+`  PASSWORD: ${adminPassword}`,
+`- OTP: ${otp}\t`,
+`- Creating Order User: (use in creating order at Sign In API Body)`,
+`  USERNAME : ${createUser}`,
+`  PASSWORD: ${createPass}`,
+"General Notes:",
+"- For Testing Orders, please use the following Credit Card details:",
+"  Credit card (Visa Card)",
+"  Number: 4111 1111 1111 1111",
+"  CVV: 123",
+"  Expiry: 0525",
+"  Name: test",
+"- In all APIs, the PlatformTypeid will always be (5).",
+"- Please provide us with a mobile number to register it as a Madfu client for use in the testing cycle.",
+"Should you have any questions, concerns, or require assistance throughout the integration process, please do not hesitate to reach out to me. I am here to support you every step of the way.",
+"",
+"",
+"Best regards,",
+"Ahmed AbdelMaksoud",
+"Madfu Integration Team"
+    ];
+    return lines.join("\n");
+  }
+
+  // DOC fallback (same as previous)
+  function downloadDoc(filename, text) {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap;">${escapeHtml(text)}</pre></body></html>`;
+    const blob = new Blob([html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url); a.remove();}, 500);
+  }
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // DOCX generation using docx library
+  async function generateDocxFile(filename, creds) {
+    if (!docxLib) {
+      // fallback to DOC if docx lib not available
+      downloadDoc(filename.replace(/\.docx$/i, '.doc'), composeMessage());
+      return;
+    }
+
+    // Table rows: label, value
+    const rows = [];
+    function cell(text, opts = {}) {
+      const shading = opts.shade ? { type: ShadingType.CLEAR, fill: opts.fill || 'EAF3FF', color: 'auto' } : undefined;
+      return new TableCell({
+        shading,
+        children: [ new Paragraph(text) ],
       });
-      return result;
     }
 
-    document.getElementById('send').addEventListener('click', async ()=>{
-      const url = endpointEl.value.trim();
-      if(!url){responseEl.textContent='Please provide an endpoint URL.';return}
-      const method = methodEl.value;
-      const headers = parseHeaders(headersEl.value);
-      const opts = {method,headers};
-      if(method !== 'GET' && method !== 'DELETE'){
-        const contentType = document.getElementById('contentType').value;
-        if(contentType) headers['Content-Type'] = contentType;
-        let body = bodyEl.value;
-        if(contentType === 'application/json'){
-          try{ body = JSON.stringify(JSON.parse(body)); }catch(e){}
-        }
-        opts.body = body;
-      }
+    // Build credential rows (colored labels on left)
+    const tableRows = [
+      new TableRow({ children: [ cell('AUTHORIZATION', {shade:true, fill:'E6F0FF'}), cell(creds.authorization) ] }),
+      new TableRow({ children: [ cell('APPCODE', {shade:true, fill:'E6F0FF'}), cell(creds.appCode) ] }),
+      new TableRow({ children: [ cell('APIKEY', {shade:true, fill:'E6F0FF'}), cell(creds.apiKey) ] }),
+      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill:'FFF1E6'}), new TableCell({ children: [ new Paragraph({ children: [ new ExternalHyperlink({ children: [ new Paragraph('Madfu Vendor Dashboard') ], link: 'https://vendor-staging-new.madfu.com.sa/login' }) ] }) ] }) ] }),
+      new TableRow({ children: [ cell('Admin USER', {shade:true, fill:'FFF1E6'}), cell(creds.adminUser) ] }),
+      new TableRow({ children: [ cell('Admin PASSWORD', {shade:true, fill:'FFF1E6'}), cell(creds.adminPassword) ] }),
+      new TableRow({ children: [ cell('OTP', {shade:true, fill:'F0FFF0'}), cell(creds.otp) ] }),
+      new TableRow({ children: [ cell('Creating Order USERNAME', {shade:true, fill:'F0FFF0'}), cell(creds.createUser) ] }),
+      new TableRow({ children: [ cell('Creating Order PASSWORD', {shade:true, fill:'F0FFF0'}), cell(creds.createPass) ] }),
+      new TableRow({ children: [ cell('API Docs', {shade:true, fill:'FFF1E6'}), new TableCell({ children: [ new Paragraph({ children: [ new ExternalHyperlink({ children: [ new Paragraph('Madfu API Integration Documentation') ], link: 'https://madfuapis.readme.io/reference/inittoken' }) ] }) ] }) ] })
+    ];
 
-      responseEl.textContent = 'Loading...';
-      try{
-        const res = await fetch(url, opts);
-        const text = await res.text();
-        const ct = res.headers.get('content-type') || '';
-        if(ct.includes('application/json')){
-          try{ const json = JSON.parse(text); responseEl.textContent = JSON.stringify(json,null,2);}catch(e){responseEl.textContent = text}
-        } else {
-          responseEl.textContent = text;
-        }
-      }catch(err){
-        responseEl.textContent = 'Request error: ' + err.message;
-      }
+    const table = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: tableRows
     });
 
-    document.getElementById('pretty').addEventListener('click', ()=>{
-      try{
-        const current = responseEl.textContent;
-        const obj = JSON.parse(current);
-        responseEl.textContent = JSON.stringify(obj,null,2);
-      }catch(e){
-        alert('Response is not valid JSON');
-      }
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ text: creds.headerTitle || 'Madfu Integration — Credentials', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ text: `Generated: ${new Date().toLocaleString()}`, spacing: { after: 200 } }),
+          table,
+          new Paragraph({ text: '', spacing: { after: 200 } }),
+          new Paragraph({ text: 'General Notes:', heading: HeadingLevel.HEADING_3 }),
+          new Paragraph('For Testing Orders, please use the following Credit Card details:'),
+          new Paragraph('Visa: 4111 1111 1111 1111  CVV: 123  Expiry: 05/25  Name: test'),
+          new Paragraph(`PlatformTypeId: ${creds.platformTypeId}`),
+          new Paragraph({ text: '', spacing: { before: 200 } }),
+          new Paragraph('Best regards,'),
+          new Paragraph('Ahmed AbdelMaksoud'),
+          new Paragraph('Madfu Integration Team')
+        ]
+      }]
     });
 
-    document.getElementById('copy').addEventListener('click', ()=>{
-      const txt = responseEl.textContent;
-      navigator.clipboard.writeText(txt).then(()=>alert('Copied response to clipboard')).catch(()=>alert('Copy failed'));
-    });
+    // pack and download
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
 
-    document.getElementById('downloadLog').addEventListener('click', ()=>{
-      const text = responseEl.textContent || '';
-      const blob = new Blob([text],{type:'text/plain;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'response.txt';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    });
+  // preview-only button
+  previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); messagePreview.value = composeMessage(); log('Preview generated'); });
 
-    // update preview on credit card inputs
-    [ccName,ccNumber,ccExpiry].forEach(el=>el.addEventListener('input', ()=>{
-      pName.textContent = ccName.value || '-';
-      pNumber.textContent = ccNumber.value || '-';
-      pExpiry.textContent = ccExpiry.value || '-';
-    }));
+  // generate button (enabled after success)
+  generateDocBtn.addEventListener('click', async (e)=>{ 
+    e.preventDefault(); 
+    if(!lastFlowSuccess){ alert('Generate is enabled only after a successful run.'); return; } 
+    const merchant = (document.getElementById('merchantName')?.value || 'Merchant').replace(/[^a-z0-9-_ ]/ig,'').replace(/\s+/g,'_');
+    const ts = new Date().toISOString().replace(/[:-]/g,'').replace(/\..+$/,'');
+    const filenameDocx = `${merchant}_Madfu_Credentials_${ts}.docx`;
+    const filenameDoc = `${merchant}_Madfu_Credentials_${ts}.doc`;
+    const creds = {
+      authorization: document.getElementById('basicAuth').value.trim() || '—',
+      appCode: document.getElementById('appCode').value.trim() || '—',
+      apiKey: document.getElementById('apiKey').value.trim() || '—',
+      adminUser: document.getElementById('adminUser').value.trim() || '—',
+      adminPassword: document.getElementById('adminPassword').value || '—',
+      otp: document.getElementById('otp').value.trim() || '1001',
+      createUser: document.getElementById('username').value.trim() || '—',
+      createPass: document.getElementById('password').value || '—',
+      headerTitle: `Madfu Integration — Credentials (${merchant})`,
+      platformTypeId: document.getElementById('platformTypeId').value.trim() || '5'
+    };
 
-    // Generate a Word-compatible document (HTML inside a Word file) with blue table and credit card block
-    document.getElementById('generateDoc').addEventListener('click', ()=>{
-      const title = 'Api documentation Guide';
-      const url = endpointEl.value || '-';
-      const method = methodEl.value || '-';
-      const headers = headersEl.value || '';
-      const body = bodyEl.value || '';
+    // Fill preview from the composed message if empty
+    messagePreview.value = messagePreview.value && messagePreview.value.trim() ? messagePreview.value : composeMessage();
 
-      const cardholder = ccName.value || '-';
-      const number = ccNumber.value || '-';
-      const expiry = ccExpiry.value || '-';
-      const cvc = ccCvc.value || '-';
-
-      // Build an HTML document that Word will accept
-      const docHtml = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>${escapeHtml(title)}</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif;color:#0b1f3a}
-  h1{color:#0b66c2}
-  .meta{margin-bottom:12px}
-  .blue-table{width:100%;border-collapse:collapse}
-  .blue-table th{background:#0b66c2;color:#fff;padding:8px;text-align:left}
-  .blue-table td{padding:8px;border:1px solid #cfe0fb}
-  .credit-card{border:1px solid #cfe0fb;padding:10px;border-radius:6px;background:#f7fbff;margin-top:12px}
-  .label{font-weight:700;color:#11497a}
-</style>
-</head>
-<body>
-  <h1>${escapeHtml(title)}</h1>
-  <div class="meta"><strong>Endpoint:</strong> ${escapeHtml(url)} &nbsp; <strong>Method:</strong> ${escapeHtml(method)}</div>
-  <table class="blue-table">
-    <thead>
-      <tr><th>Header / Field</th><th>Value</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Headers</td><td><pre>${escapeHtml(headers)}</pre></td></tr>
-      <tr><td>Body</td><td><pre>${escapeHtml(body)}</pre></td></tr>
-      <tr><td>Generated At</td><td>${new Date().toISOString()}</td></tr>
-    </tbody>
-  </table>
-
-  <div class="credit-card">
-    <div class="label">Credit Card</div>
-    <div>Cardholder: ${escapeHtml(cardholder)}</div>
-    <div>Number: ${escapeHtml(number)}</div>
-    <div>Expiry: ${escapeHtml(expiry)}</div>
-    <div>CVC: ${escapeHtml(cvc)}</div>
-  </div>
-
-</body>
-</html>`;
-
-      // Create blob as Word-compatible file. Many versions of Word accept HTML files saved with .doc extension.
-      const blob = new Blob([docHtml],{type:'application/msword'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Api_documentation_Guide.doc';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(a.href);
-    });
-
-    function escapeHtml(s){
-      if(!s) return '';
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Try to generate docx; if docx lib not available or it fails, fallback to .doc
+    try {
+      await generateDocxFile(filenameDocx, creds);
+      log('DOCX generated: ' + filenameDocx);
+    } catch (err) {
+      console.warn('DOCX generation failed, falling back to .doc', err);
+      downloadDoc(filenameDoc, messagePreview.value || composeMessage());
+      log('DOC fallback generated: ' + filenameDoc);
     }
+  });
 
-  </script>
+  // run flow
+  runBtn.addEventListener('click', async () => {
+    logEl && (document.getElementById('log').textContent = ''); // clear logs
+    successBox.style.display = 'none';
+    generateDocBtn.disabled = true;
+    generateDocBtn.classList.add('disabled');
+    lastFlowSuccess = false;
+
+    const baseUrl = document.getElementById('baseUrl').value.trim();
+    if(!baseUrl){ alert('Please choose Base URL'); return; }
+
+    const theUuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    document.getElementById('runUuid').value = theUuid;
+    document.getElementById('merchantRef').value = document.getElementById('merchantRef').value || ('ref-' + Date.now());
+
+    try {
+      // init token
+      const initEndpoint = `${baseUrl}/merchants/token/init`;
+      const { url: initUrl } = withProxy(initEndpoint);
+      const initHeaders = buildHeaders(false);
+      log('Request Init Token → ' + initUrl);
+      const initRes = await doFetch(initUrl, 'POST', initHeaders, { uuid: theUuid, systemInfo: document.getElementById('systemInfo').value });
+      log('Init response ' + initRes.status);
+      const initToken = initRes.json?.token || initRes.json?.Token || initRes.json?.data?.token || null;
+
+      // sign in
+      const signEndpoint = `${baseUrl}/Merchants/sign-in`;
+      const { url: signUrl } = withProxy(signEndpoint);
+      const signHeaders = buildHeaders(true, initToken);
+      const signBody = { userName: document.getElementById('username').value.trim(), password: document.getElementById('password').value };
+      log('Signing in → ' + signUrl);
+      const signRes = await doFetch(signUrl, 'POST', signHeaders, signBody);
+      log('Sign-in response ' + signRes.status);
+      const signToken = signRes.json?.token || signRes.json?.Token || signRes.json?.data?.token || null;
+
+      // create order
+      const createEndpoint = `${baseUrl}/Merchants/Checkout/CreateOrder`;
+      const { url: createUrl } = withProxy(createEndpoint);
+      const createHeaders = buildHeaders(true, signToken);
+      const createBody = {
+        Order: {
+          Taxes: Number(document.getElementById('taxes').value || 0),
+          ActualValue: Number(document.getElementById('actualValue').value || 0),
+          Amount: Number(document.getElementById('amount').value || 0),
+          MerchantReference: document.getElementById('merchantRef').value || ('ref-' + Date.now())
+        },
+        OrderDetails: [{
+          productName: document.getElementById('productName').value.trim(),
+          SKU: document.getElementById('sku').value.trim(),
+          productImage: document.getElementById('productImage').value.trim(),
+          count: Number(document.getElementById('count').value || 1),
+          totalAmount: Number(document.getElementById('totalAmount').value || 0)
+        }],
+        GuestOrderData: {
+          Lang: document.getElementById('lang').value.trim(),
+          CustomerName: document.getElementById('customerName').value.trim(),
+          CustomerMobile: document.getElementById('customerMobile').value.trim(),
+          ShippingAddress: document.getElementById('shippingAddress').value.trim()
+        },
+        MerchantUrls: {
+          Success: document.getElementById('successUrl').value.trim(),
+          Failure: document.getElementById('failureUrl').value.trim(),
+          Cancel: document.getElementById('cancelUrl').value.trim()
+        }
+      };
+      log('CreateOrder → ' + createUrl);
+      const createRes = await doFetch(createUrl, 'POST', createHeaders, createBody);
+      log('CreateOrder response ' + createRes.status);
+
+      // extract link
+      let link = findCheckoutLink(createRes.json ?? createRes.raw);
+      if(!link && typeof createRes.raw === 'string'){ const m = createRes.raw.match(/https?:\/\/[^"'}\\s]+/); if(m) link = m[0]; }
+
+      // success
+      lastFlowSuccess = true;
+      successBox.style.display = 'block';
+      if(link){ openCheckout.href = link; openCheckout.textContent = link; } else { openCheckout.href = '#'; openCheckout.textContent = '(no checkout link)'; }
+      generateDocBtn.disabled = false;
+      generateDocBtn.classList.remove('disabled');
+      messagePreview.value = composeMessage();
+      log('Flow succeeded — generate enabled');
+    } catch(err) {
+      log('Error during flow: ' + (err && err.message ? err.message : err));
+      lastFlowSuccess = false;
+      successBox.style.display = 'none';
+      generateDocBtn.disabled = true;
+      generateDocBtn.classList.add('disabled');
+      // show logs
+      logsVisible = true;
+      document.getElementById('logContainer').style.display = 'block';
+      toggleLogsBtn.textContent = 'Hide logs';
+    }
+  });
+
+  // helpers
+  function uuid(){ return (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2); }
+  function uniqueRef(){ return 'ref-' + Date.now(); }
+
+  // initial
+  generateDocBtn.disabled = true;
+  messagePreview.value = composeMessage();
+  log('UI ready — fill credentials and run the flow.');
+
+  // helper functions used by run flow
+  function withProxy(targetUrl) {
+    const proxyBase = (document.getElementById('proxyUrl').value || '').trim();
+    if (!proxyBase) return { url: targetUrl, viaProxy: false };
+    return { url: `${proxyBase}?url=${encodeURIComponent(targetUrl)}`, viaProxy: true };
+  }
+  function doFetch(url, method, headers, body){
+    return fetch(url, {method, headers, body: body ? JSON.stringify(body): undefined})
+      .then(async res => {
+        const text = await res.text(); let json=null; try{json=JSON.parse(text)}catch(e){}
+        return {status:res.status, headers:Object.fromEntries(res.headers.entries()), json, raw: text};
+      });
+  }
+  function findCheckoutLink(obj){
+    if(!obj) return null;
+    const keys=['checkoutLink','CheckoutLink','checkoutUrl','CheckoutUrl','paymentUrl','PaymentUrl','url','Url','payment_url','redirectUrl','redirect_url'];
+    const tryKeys=(o,keys)=>keys.map(k=>o&&typeof o==='object'?o[k]:undefined).find(v=>v);
+    let found=tryKeys(obj,keys); if(found) return found;
+    const nests=['data','Data','result','Result','response','Response'];
+    for(const n of nests){ if(obj[n]){ found=tryKeys(obj[n],keys); if(found) return found; } }
+    try{ const s=JSON.stringify(obj); const m=s.match(/https?:\/\/[^"'}\\s]+/); if(m) return m[0]; }catch(e){}
+    return null;
+  }
+
+})();
+</script>
 </body>
 </html>
