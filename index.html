@@ -138,7 +138,7 @@
           <input id="otp" value="1001" />
         </div>
         <div>
-          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a></label>
+          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a[...]
         </div>
       </div>
 
@@ -253,7 +253,14 @@
     <!-- Document generation -->
     <div class="card">
       <h2>Generate Merchant Document (.doc / .docx)</h2>
-      <p class="small">The document contains credentials in a colored table and links to the Dashboard and API docs.</p>
+      <p class="small" style="white-space:pre-wrap;">Dears ,
+
+                 I hope this email finds you well.
+
+I am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration. 
+Our goal is to ensure a seamless and efficient experience for you as you integrate our API into your systems.
+To assist you in this process, I would like to introduce you to our comprehensive documentation along with  testing credentials to facilitate the testing of the integration
+These credentials will enable you to perform thorough testing and ensure that the integration meets your requirements and expectations:</p>
 
       <label for="messagePreview">Preview (editable before download)</label>
       <textarea id="messagePreview" placeholder="Preview will appear here"></textarea>
@@ -287,7 +294,8 @@
   let logsVisible = false;
   let lastFlowSuccess = false;
 
-  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n` + (el.textContent||''); } catch(e){} }
+  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n` + (el.textContent||''); }catch(e){}
+  }
 
   toggleLogsBtn?.addEventListener('click', () => {
     logsVisible = !logsVisible;
@@ -416,14 +424,14 @@
     }
 
     lines.push('');
-    lines.push('Note: Sensitive credential values (APIKey, AppCode, Authorization) were intentionally excluded from this message body and will be included in the generated Word (DOCX) credential table.');
+    lines.push('Note: Sensitive credential values (APIKey, AppCode, Authorization) were intentionally excluded from this message body and will be included in the generated Word (DOCX) credential table[...]');
 
     return lines.join('\n');
   }
 
   // DOC fallback (same as previous)
   function downloadDoc(filename, text) {
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap;">${escapeHtml(text)}</pre></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap;">${escapeHtml(text||'')}</pre></body></html>`;
     const blob = new Blob([html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -433,7 +441,7 @@
     a.click();
     setTimeout(()=>{URL.revokeObjectURL(url); a.remove();}, 500);
   }
-  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // DOCX generation using docx library
   async function generateDocxFile(filename, creds) {
@@ -498,7 +506,7 @@
       new TableRow({ children: [ cell('APPCODE', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.appCode) ] }),
       new TableRow({ children: [ cell('APIKEY', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.apiKey) ] }),
       // Dashboard row — clickable when dashboardLink provided
-      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill: labelFill, bold:true, color: labelColor}), linkCell(creds.dashboard || creds.dashboardLink || 'Dashboard', creds.dashboardLink, {shade:false}) ] }),
+      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill: labelFill, bold:true, color: labelColor}), linkCell(creds.dashboard || creds.dashboardLink || 'Dashboard', creds.dashboardLink, {shade:true}) ] }),
       new TableRow({ children: [ cell('Admin USER', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.adminUser) ] }),
       new TableRow({ children: [ cell('Admin PASSWORD', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.adminPassword) ] }),
       new TableRow({ children: [ cell('OTP', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.otp) ] }),
