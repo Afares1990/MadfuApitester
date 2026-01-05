@@ -138,7 +138,8 @@
           <input id="otp" value="1001" />
         </div>
         <div>
-          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a[...]
+          <!-- Changed from a <label> to a non-interactive <div> to avoid label click behavior affecting nearby inputs -->
+          <div class="small">Madfu Vendor Dashboard: <a id="dashboardAnchor" href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a></div>
         </div>
       </div>
 
@@ -279,6 +280,9 @@ These credentials will enable you to perform thorough testing and ensure that th
   // docx alias (UMD)
   const docxLib = window.docx || null;
   const { Document, Paragraph, Table, TableRow, TableCell, Packer, TextRun, HeadingLevel, WidthType, ShadingType, ExternalHyperlink } = docxLib || {};
+
+  // Intro paragraph to include in preview and generated docs
+  const introText = `Dears ,\n\n                 I hope this email finds you well.\n\nI am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration. \nOur goal is to ensure a seamless and efficient experience for you as you integrate our API into your systems.\nTo assist you in this process, I would like to introduce you to our comprehensive documentation along with  testing credentials to facilitate the testing of the integration\nThese credentials will enable you to perform thorough testing and ensure that the integration meets your requirements and expectations:`;
 
   // UI refs
   const logEl = document.getElementById('log');
@@ -447,7 +451,7 @@ These credentials will enable you to perform thorough testing and ensure that th
   async function generateDocxFile(filename, creds) {
     if (!docxLib) {
       // fallback to DOC if docx lib not available
-      downloadDoc(filename.replace(/\.docx$/i, '.doc'), messagePreview.value || composeMessage());
+      downloadDoc(filename.replace(/\.docx$/i, '.doc'), messagePreview.value || (introText + '\n\n' + composeMessage()));
       return;
     }
 
@@ -525,7 +529,7 @@ These credentials will enable you to perform thorough testing and ensure that th
 
     // Email-style body
     const subject = creds.headerTitle || 'Api documentation Guide';
-    const bodyText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : composeMessage();
+    const bodyText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : (introText + '\n\n' + composeMessage());
 
     const bodyParagraphs = paragraphNodesFromText(bodyText);
 
@@ -568,7 +572,7 @@ These credentials will enable you to perform thorough testing and ensure that th
   }
 
   // preview-only button
-  previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); messagePreview.value = composeMessage(); log('Preview generated'); });
+  previewBtn.addEventListener('click', (e)=>{ e.preventDefault(); messagePreview.value = introText + '\n\n' + composeMessage(); log('Preview generated'); });
 
   // generate button (enabled after success)
   generateDocBtn.addEventListener('click', async (e)=>{ 
@@ -594,8 +598,13 @@ These credentials will enable you to perform thorough testing and ensure that th
       apiDocsLink: document.getElementById('apiDocsLink')?.value.trim() || ''
     };
 
-    // Fill preview from the composed message if empty
-    messagePreview.value = messagePreview.value && messagePreview.value.trim() ? messagePreview.value : composeMessage();
+    // Ensure preview always contains the intro paragraph (prepend if missing)
+    const composed = composeMessage();
+    if (!messagePreview.value || !messagePreview.value.trim()) {
+      messagePreview.value = introText + '\n\n' + composed;
+    } else if (!messagePreview.value.includes(introText.trim())) {
+      messagePreview.value = introText + '\n\n' + messagePreview.value;
+    }
 
     // Try to generate docx; if docx lib not available or it fails, fallback to .doc
     try {
@@ -603,7 +612,7 @@ These credentials will enable you to perform thorough testing and ensure that th
       log('DOCX generated: ' + filenameDocx);
     } catch (err) {
       console.warn('DOCX generation failed, falling back to .doc', err);
-      downloadDoc(filenameDoc, messagePreview.value || composeMessage());
+      downloadDoc(filenameDoc, messagePreview.value || (introText + '\n\n' + composeMessage()));
       log('DOC fallback generated: ' + filenameDoc);
     }
   });
@@ -687,7 +696,7 @@ These credentials will enable you to perform thorough testing and ensure that th
       if(link){ openCheckout.href = link; openCheckout.textContent = link; } else { openCheckout.href = '#'; openCheckout.textContent = '(no checkout link)'; }
       generateDocBtn.disabled = false;
       generateDocBtn.classList.remove('disabled');
-      messagePreview.value = composeMessage();
+      messagePreview.value = introText + '\n\n' + composeMessage();
       log('Flow succeeded — generate enabled');
     } catch(err) {
       log('Error during flow: ' + (err && err.message ? err.message : err));
@@ -708,7 +717,7 @@ These credentials will enable you to perform thorough testing and ensure that th
 
   // initial
   generateDocBtn.disabled = true;
-  messagePreview.value = composeMessage();
+  messagePreview.value = introText + '\n\n' + composeMessage();
   log('UI ready — fill credentials and run the flow.');
 
   // helper functions used by run flow
