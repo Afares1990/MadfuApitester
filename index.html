@@ -452,6 +452,22 @@
       return cell(text || '', opts);
     }
 
+    // helper to convert a multi-line message into docx Paragraph nodes preserving blanks and leading spaces
+    function paragraphNodesFromText(text){
+      const t = String(text || '')
+        .replace(/\r/g,'');
+      // split into paragraphs by two or more newlines
+      const paras = t.split(/\n{2,}/g);
+      return paras.map(p => {
+        // preserve leading spaces
+        const leadingMatch = p.match(/^(\s*)/);
+        const leading = leadingMatch ? leadingMatch[0] : '';
+        const leadingNbsp = leading.replace(/ /g,'\u00A0').replace(/\t/g,'\u00A0\u00A0\u00A0\u00A0');
+        const content = leadingNbsp + p.trimStart();
+        return new Paragraph({ children: [ new TextRun({ text: content }) ] });
+      });
+    }
+
     // Build credential rows (blue labels on left)
     const labelFill = 'E6F0FF';
     const labelColor = '0B66C2';
@@ -480,15 +496,16 @@
     const subject = creds.headerTitle || 'Api documentation Guide';
     const bodyText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : composeMessage();
 
+    const bodyParagraphs = paragraphNodesFromText(bodyText);
+
     const doc = new Document({
       sections: [{
         properties: {},
         children: [
           new Paragraph({ children: [ new TextRun({ text: `Subject: ${subject}`, bold: true }) ] }),
           new Paragraph({ text: '', spacing: { after: 200 } }),
-          new Paragraph({ children: [ new TextRun('Dears,' ) ] }),
-          new Paragraph({ text: '', spacing: { after: 100 } }),
-          new Paragraph({ children: [ new TextRun(bodyText) ] }),
+          // insert composed/preview paragraphs preserving formatting
+          ...bodyParagraphs,
           new Paragraph({ text: '', spacing: { after: 200 } }),
 
           // Credentials table
