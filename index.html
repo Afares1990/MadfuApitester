@@ -348,7 +348,7 @@
     return null;
   }
 
-  // compose message template with updated salutation
+  // compose message template with credentials removed from body (kept in the DOCX table)
   function composeMessage() {
     const authorization = document.getElementById('basicAuth').value.trim() || '—';
     const appCode = document.getElementById('appCode').value.trim() || '—';
@@ -365,33 +365,17 @@
 "",
 "    I hope this email finds you well.",
 "",
-"I am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration. ",
+"I am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration.",
 "Our goal is to ensure a seamless and efficient experience for you as you integrate our API into your systems.",
-"To assist you in this process, I would like to introduce you to our comprehensive documentation along with  testing credentials to facilitate the testing of the integration",
-"These credentials will enable you to perform thorough testing and ensure that the integration meets your requirements and expectations:",
+"To assist you in this process, please find below links to our documentation and testing credentials provided in the table below to facilitate integration testing.",
 "",
-`- AUTHORIZATION: ${authorization}`,
-`- APPCODE: ${appCode}`,
-`- APIKEY: ${apiKey}`,
-"",
-`- DASHBOARD:  ${dashboardName}`,
-`  Admin USER: ${adminUser}  (use to login into Dashboard)`,
-`  PASSWORD: ${adminPassword}`,
-`- OTP: ${otp}\t`,
-`- Creating Order User: (use in creating order at Sign In API Body)`,
-`  USERNAME : ${createUser}`,
-`  PASSWORD: ${createPass}`,
 "General Notes:",
-"- For Testing Orders, please use the following Credit Card details:",
-"  Credit card (Visa Card)",
-"  Number: 4111 1111 1111 1111",
-"  CVV: 123",
-"  Expiry: 0525",
-"  Name: test",
-"- In all APIs, the PlatformTypeid will always be (5).",
-"- Please provide us with a mobile number to register it as a Madfu client for use in the testing cycle.",
-"Should you have any questions, concerns, or require assistance throughout the integration process, please do not hesitate to reach out to me. I am here to support you every step of the way.",
+"- For testing orders, please use the following credit card (sandbox):",
+"  Visa: 4111 1111 1111 1111 — CVV: 123 — Expiry: 05/25 — Name: test",
+"- In all APIs, the PlatformTypeId will always be (5).",
+"- Please provide us with a mobile number to register it as a Madfu client for use during the testing cycle.",
 "",
+"Should you have any questions, concerns, or require assistance throughout the integration process, please do not hesitate to reach out to me. I am here to support you every step of the way.",
 "",
 "Best regards,",
 "Ahmed AbdelMaksoud",
