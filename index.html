@@ -348,7 +348,7 @@
     return null;
   }
 
-  // compose message template exactly as supplied
+  // compose message template with updated salutation
   function composeMessage() {
     const authorization = document.getElementById('basicAuth').value.trim() || '—';
     const appCode = document.getElementById('appCode').value.trim() || '—';
@@ -361,9 +361,9 @@
     const createPass = document.getElementById('password').value || '—';
 
     const lines = [
-"Dears ,",
+"Dear team,",
 "",
-"                 I hope this email finds you well.",
+"    I hope this email finds you well.",
 "",
 "I am writing to you on behalf of the Madfu Integration team, serving as your primary point of contact for any inquiries related to our API integration. ",
 "Our goal is to ensure a seamless and efficient experience for you as you integrate our API into your systems.",
@@ -468,7 +468,7 @@
       });
     }
 
-    // Build credential rows (blue labels on left)
+    // Build credential rows (blue labels on left) and include PlatformTypeId in the table
     const labelFill = 'E6F0FF';
     const labelColor = '0B66C2';
 
@@ -483,6 +483,8 @@
       new TableRow({ children: [ cell('OTP', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.otp) ] }),
       new TableRow({ children: [ cell('Creating Order USERNAME', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.createUser) ] }),
       new TableRow({ children: [ cell('Creating Order PASSWORD', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.createPass) ] }),
+      // PlatformTypeId row moved into the table
+      new TableRow({ children: [ cell('PlatformTypeId', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.platformTypeId) ] }),
       // API Docs row — clickable when apiDocsLink provided
       new TableRow({ children: [ cell('API Docs', {shade:true, fill: labelFill, bold:true, color: labelColor}), linkCell(creds.apiDocsLink || 'API Docs', creds.apiDocsLink, {shade:false}) ] })
     ];
@@ -513,10 +515,9 @@
           table,
           new Paragraph({ text: '', spacing: { after: 200 } }),
 
-          // Credit-card test block & PlatformTypeId
+          // Credit-card test block & (PlatformTypeId moved to table)
           new Paragraph({ text: 'Test Card (for sandbox):', heading: HeadingLevel.HEADING_3 }),
           new Paragraph('Visa: 4111 1111 1111 1111  CVV: 123  Expiry: 05/25  Name: test'),
-          new Paragraph(`PlatformTypeId: ${creds.platformTypeId}`),
 
           new Paragraph({ text: '', spacing: { before: 200 } }),
           new Paragraph('Best regards,'),
@@ -697,7 +698,7 @@
   function findCheckoutLink(obj){
     if(!obj) return null;
     const keys=['checkoutLink','CheckoutLink','checkoutUrl','CheckoutUrl','paymentUrl','PaymentUrl','url','Url','payment_url','redirectUrl','redirect_url'];
-    const tryKeys=(o,keys)=>keys.map(k=>o&&typeof o==='object'?o[k]:undefined).find(v=>v);
+    const tryKeys=(o,keys)=>keys.map(k=>o&&typeof o === 'object'?o[k]:undefined).find(v=>v);
     let found=tryKeys(obj,keys); if(found) return found;
     const nests=['data','Data','result','Result','response','Response'];
     for(const n of nests){ if(obj[n]){ found=tryKeys(obj[n],keys); if(found) return found; } }
