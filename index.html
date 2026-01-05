@@ -30,7 +30,7 @@
     .log-mini { font-size:13px; color:#374151; background:#fbfdff; padding:8px; border-radius:8px; border:1px solid #e6eef8; }
     .success-box { display:none; background:#f0fff3; border:1px solid #b7f2c6; color:#065a2b; padding:12px; border-radius:8px; margin-top:12px; }
     .success-box a { color:#064e3b; font-weight:700; text-decoration:underline; }
-    .log { white-space:pre-wrap; background:#0f1724; color:#cfe8ff; padding:12px; border-radius:8px; max-height:360px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #0b122[...]
+    .log { white-space:pre-wrap; background:#0f1724; color:#cfe8ff; padding:12px; border-radius:8px; max-height:360px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #0b1220; }
     .log-collapsed { display:none; }
     .generate-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
     .disabled { opacity:0.5; pointer-events:none; }
@@ -138,7 +138,7 @@
           <input id="otp" value="1001" />
         </div>
         <div>
-          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/log[...]</label>
+          <label for="notes-small" class="small">Madfu Vendor Dashboard: <a href="https://vendor-staging-new.madfu.com.sa/login" target="_blank" rel="noopener">vendor-staging-new.madfu.com.sa/login</a></label>
         </div>
       </div>
 
@@ -287,7 +287,7 @@
   let logsVisible = false;
   let lastFlowSuccess = false;
 
-  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocal[...]
+  function log(title, data){ try{ const t = data===undefined? title : `${title} ${JSON.stringify(data,null,2)}`; const el = document.getElementById('log'); el.textContent = `[${new Date().toLocaleTimeString()}] ${t}\n` + (el.textContent||''); } catch(e){} }
 
   toggleLogsBtn?.addEventListener('click', () => {
     logsVisible = !logsVisible;
@@ -423,7 +423,7 @@
 
   // DOC fallback (same as previous)
   function downloadDoc(filename, text) {
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap[...]
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title></head><body><pre style="font-family:Segoe UI, Arial, sans-serif; font-size:13px; white-space:pre-wrap;">${escapeHtml(text)}</pre></body></html>`;
     const blob = new Blob([html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -498,7 +498,7 @@
       new TableRow({ children: [ cell('APPCODE', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.appCode) ] }),
       new TableRow({ children: [ cell('APIKEY', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.apiKey) ] }),
       // Dashboard row — clickable when dashboardLink provided
-      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill: labelFill, bold:true, color: labelColor}), linkCell(creds.dashboard || creds.dashboardLink || 'Dashboard', creds.dashboardLin[...]
+      new TableRow({ children: [ cell('DASHBOARD', {shade:true, fill: labelFill, bold:true, color: labelColor}), linkCell(creds.dashboard || creds.dashboardLink || 'Dashboard', creds.dashboardLink, {shade:false}) ] }),
       new TableRow({ children: [ cell('Admin USER', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.adminUser) ] }),
       new TableRow({ children: [ cell('Admin PASSWORD', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.adminPassword) ] }),
       new TableRow({ children: [ cell('OTP', {shade:true, fill: labelFill, bold:true, color: labelColor}), cell(creds.otp) ] }),
