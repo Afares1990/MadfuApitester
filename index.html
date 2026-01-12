@@ -451,7 +451,9 @@ These credentials will enable you to perform thorough testing and ensure that th
   async function generateDocxFile(filename, creds) {
     if (!docxLib) {
       // fallback to DOC if docx lib not available
-      downloadDoc(filename.replace(/\.docx$/i, '.doc'), messagePreview.value || (introText + '\n\n' + composeMessage()));
+      let finalText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : composeMessage();
+      if (!finalText.includes(introText.trim())) finalText = introText + '\n\n' + finalText;
+      downloadDoc(filename.replace(/\.docx$/i, '.doc'), finalText);
       return;
     }
 
@@ -529,7 +531,8 @@ These credentials will enable you to perform thorough testing and ensure that th
 
     // Email-style body
     const subject = creds.headerTitle || 'Api documentation Guide';
-    const bodyText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : (introText + '\n\n' + composeMessage());
+    let bodyText = (messagePreview && messagePreview.value && messagePreview.value.trim()) ? messagePreview.value : composeMessage();
+    if (!bodyText.includes(introText.trim())) bodyText = introText + '\n\n' + bodyText;
 
     const bodyParagraphs = paragraphNodesFromText(bodyText);
 
@@ -612,7 +615,10 @@ These credentials will enable you to perform thorough testing and ensure that th
       log('DOCX generated: ' + filenameDocx);
     } catch (err) {
       console.warn('DOCX generation failed, falling back to .doc', err);
-      downloadDoc(filenameDoc, messagePreview.value || (introText + '\n\n' + composeMessage()));
+      // ensure fallback has intro
+      let fallbackText = messagePreview.value && messagePreview.value.trim() ? messagePreview.value : composed;
+      if (!fallbackText.includes(introText.trim())) fallbackText = introText + '\n\n' + fallbackText;
+      downloadDoc(filenameDoc, fallbackText);
       log('DOC fallback generated: ' + filenameDoc);
     }
   });
