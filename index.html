@@ -354,7 +354,7 @@ These credentials will enable you to perform thorough testing and ensure that th
     }
     try {
       const s = JSON.stringify(obj);
-      const m = s.match(/https?:\/\/[^"'}\\s]+/);
+      const m = s.match(/https?:\/\/[^\"'}\\s]+/);
       if (m) return m[0];
     } catch(e){}
     return null;
@@ -389,15 +389,7 @@ These credentials will enable you to perform thorough testing and ensure that th
       lines.push(`Environment: ${state.baseUrl || ''}${state.proxyUrl ? ' (proxy: ' + state.proxyUrl + ')' : ''}`);
     }
 
-    // Headers — do NOT include secret values here. Indicate they are in the DOCX.
-    lines.push('');
-    lines.push('Headers (values excluded — credentials are attached in the DOCX credentials table):');
-    lines.push(`- APIKey: (included in DOCX)`);
-    lines.push(`- AppCode: (included in DOCX)`);
-    lines.push(`- Authorization / Basic: (included in DOCX)`);
-    if (state.platformTypeId !== undefined) {
-      lines.push(`- PlatformTypeId: ${state.platformTypeId}`);
-    }
+    // NOTE: Removed the header-summary block and final note because credentials are included in the DOCX credentials table.
 
     // Include sanitized request/response payloads if present
     if (state.requestBody) {
@@ -426,9 +418,6 @@ These credentials will enable you to perform thorough testing and ensure that th
       lines.push('Logs:');
       lines.push(String(state.logs));
     }
-
-    lines.push('');
-    lines.push('Note: Sensitive credential values (APIKey, AppCode, Authorization) were intentionally excluded from this message body and will be included in the generated Word (DOCX) credential table[...]');
 
     return lines.join('\n');
   }
@@ -694,7 +683,7 @@ These credentials will enable you to perform thorough testing and ensure that th
 
       // extract link
       let link = findCheckoutLink(createRes.json ?? createRes.raw);
-      if(!link && typeof createRes.raw === 'string'){ const m = createRes.raw.match(/https?:\/\/[^"'}\\s]+/); if(m) link = m[0]; }
+      if(!link && typeof createRes.raw === 'string'){ const m = createRes.raw.match(/https?:\/\/[^\"'}\\s]+/); if(m) link = m[0]; }
 
       // success
       lastFlowSuccess = true;
@@ -746,7 +735,7 @@ These credentials will enable you to perform thorough testing and ensure that th
     let found=tryKeys(obj,keys); if(found) return found;
     const nests=['data','Data','result','Result','response','Response'];
     for(const n of nests){ if(obj[n]){ found=tryKeys(obj[n],keys); if(found) return found; } }
-    try{ const s=JSON.stringify(obj); const m=s.match(/https?:\/\/[^"'}\\s]+/); if(m) return m[0]; }catch(e){}
+    try{ const s=JSON.stringify(obj); const m=s.match(/https?:\/\/[^\"'}\\s]+/); if(m) return m[0]; }catch(e){}
     return null;
   }
 
